@@ -1,0 +1,33 @@
+# Copyright 2026 Bitwise Media Group Ltd.
+# SPDX-License-Identifier: MIT
+
+# Continuous integration — thin caller for the org's reusable ci workflow. It runs
+# the canonical Makefile gates (lint, build, test) as one parallel job each, then a
+# Codecov upload from coverage/cobertura-coverage.xml (coverage) and
+# coverage/junit.xml (test results) — both emitted by `make test`. `make lint`
+# carries the check-mode static analysis: addlicense, golangci-lint, govulncheck.
+# The Go version comes from go.mod.
+#
+# The reusable workflow is pinned to a full commit SHA (tag in the comment) so a
+# moved tag can never change what runs; Dependabot keeps the pin fresh.
+name: Continuous Integration
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+# the reusable workflow's jobs only need contents:read; grant just that ceiling
+permissions:
+    contents: read
+
+jobs:
+    ci:
+        uses: bitwise-media-group/github-workflows/.github/workflows/ci.yaml@83b83722f4120b368e100e3b4a4af359522578c0 # v4.0.3
+        with:
+            # default is go.sum; list every lockfile that affects the build. `make
+            # lint`/`make test` run the tools/ CLIs (golangci-lint, govulncheck,
+            # addlicense, gotestsum, gocover-cobertura) pinned in tools/go.mod.
+            cache-dependency-path: |
+                go.sum
+                tools/go.sum

@@ -1,0 +1,49 @@
+# Copyright 2026 Bitwise Media Group Ltd.
+# SPDX-License-Identifier: MIT
+
+# Fast-forward merge — thin caller for the org's reusable merge workflow. A
+# maintainer comments `/merge` to merge an approved, green PR now, or arms it
+# (`/auto-merge` comment or the `auto-merge` label) to merge automatically once it is
+# approved and every required check is green. Either way the base branch is
+# fast-forwarded to the PR head, so commit objects (and their signatures) are
+# preserved and release-please sees each Conventional Commit individually.
+#
+# Every trigger here is one that does NOT attach a check run to the PR head
+# (issue_comment, workflow_run, schedule), so the merge machinery leaves no
+# skipped-job clutter. The approval signal is captured by the companion
+# merge-review-ack.yaml, whose completed run re-enters via workflow_run; the
+# workflow_run list names every workflow that must pass — "Continuous Integration"
+# and "Security Analysis" — plus "Merge Review Ack". The hourly schedule sweeps
+# armed PRs as a backstop. None of these run PR code.
+#
+# Org prerequisites (see bitwise-media-group/ff-merge): the FF_MERGE_CLIENT_ID
+# variable + FF_MERGE_PRIVATE_KEY secret, and the "FF Merge" App installed on this
+# repo and in main's ruleset bypass list. Requires branch protection that requires
+# PR review.
+#
+# The reusable workflow is pinned to a full commit SHA; Dependabot keeps it fresh.
+name: Merge
+
+on:
+    issue_comment:
+        types: [created]
+    workflow_run:
+        workflows:
+            - "Continuous Integration"
+            - "Security Analysis"
+            - "Merge Review Ack"
+        types: [completed]
+    schedule:
+        # hourly backstop sweep of armed PRs for any missed event trigger
+        - cron: "17 * * * *"
+
+# the App token does the privileged work; the caller grants nothing
+permissions: {}
+
+jobs:
+    merge:
+        uses: bitwise-media-group/github-workflows/.github/workflows/merge.yaml@83b83722f4120b368e100e3b4a4af359522578c0 # v4.0.3
+        with:
+            app-client-id: ${{ vars.FF_MERGE_CLIENT_ID }}
+        secrets:
+            app-private-key: ${{ secrets.FF_MERGE_PRIVATE_KEY }}

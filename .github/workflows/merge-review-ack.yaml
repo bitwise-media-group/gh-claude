@@ -1,0 +1,28 @@
+# Copyright 2026 Bitwise Media Group Ltd.
+# SPDX-License-Identifier: MIT
+
+# Merge review ack — thin caller for the org's reusable merge-review-ack workflow.
+# It closes the fork-PR auto-merge gap: an approval on a fork PR carries no secrets,
+# so merge.yaml's review path can't merge it directly, and if CI was already green
+# the approval is the last event — nothing else fires to finish the merge. This
+# workflow completes on an approving review purely so its workflow_run(completed)
+# re-enters merge.yaml in the base-repo context, where the App token is minted and
+# the fast-forward retried. Harmless for same-repo PRs (those merge via the review
+# path directly).
+#
+# Wire-up: "Merge Review Ack" (this workflow's name) is listed in merge.yaml's
+# workflow_run.workflows. No secret needed — it does no privileged work.
+#
+# The reusable workflow is pinned to a full commit SHA; Dependabot keeps it fresh.
+name: Merge Review Ack
+
+on:
+    pull_request_review:
+        types: [submitted]
+
+# does no privileged work; grants nothing
+permissions: {}
+
+jobs:
+    ack:
+        uses: bitwise-media-group/github-workflows/.github/workflows/merge-review-ack.yaml@83b83722f4120b368e100e3b4a4af359522578c0 # v4.0.3

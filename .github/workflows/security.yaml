@@ -1,0 +1,37 @@
+# Copyright 2026 Bitwise Media Group Ltd.
+# SPDX-License-Identifier: MIT
+
+# Security analysis — thin caller for the org's reusable security workflow. It runs
+# CodeQL over the repository's GitHub Actions workflows (build-free) and the Go
+# module (autobuild; setup-go matches go.mod), on every push and pull request plus a
+# weekly scheduled run so newly published queries reach already-merged code.
+#
+# languages is pinned to "actions,go": there is no product JavaScript to scan.
+#
+# The reusable workflow is pinned to a full commit SHA (tag in the comment) so a
+# moved tag can never change what runs; Dependabot keeps the pin fresh.
+name: Security Analysis
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+    schedule:
+        - cron: "28 20 * * 4"
+
+# ceiling for the reusable workflow's analyze job
+permissions:
+    # upload analysis results to code scanning
+    security-events: write
+    # fetch internal or private CodeQL packs
+    packages: read
+    # only required for workflows in private repositories
+    actions: read
+    # check out the repository
+    contents: read
+
+jobs:
+    analyze:
+        uses: bitwise-media-group/github-workflows/.github/workflows/security.yaml@83b83722f4120b368e100e3b4a4af359522578c0 # v4.0.3
+        with:
+            languages: actions,go

@@ -1,0 +1,122 @@
+# Copyright 2026 Bitwise Media Group Ltd.
+# SPDX-License-Identifier: MIT
+
+# GoReleaser config for the gh-claude GitHub CLI extension. Releases are cut by
+# release-please via the org's reusable release workflow (.github/workflows/release.yaml):
+# when its release PR merges, the workflow pushes the vX.Y.Z tag, leaves a draft
+# GitHub release, and runs `goreleaser release --clean` — which adopts that draft
+# (use_existing_draft + mode: replace below).
+#
+# Artifacts are RAW per-platform binaries named `gh-claude-<os>-<arch>[.exe]`
+# (archives.formats: binary + name_template). That naming is exactly what
+# `gh extension install` / `gh extension upgrade` match on to pick the right asset
+# per platform — tar.gz archives would NOT be installable. Build locally without
+# publishing or signing via:
+#   goreleaser release --snapshot --clean --skip=sign
+version: 2
+
+# ^ref: https://goreleaser.com/errors/multiple-tokens/
+force_token: github
+
+project_name: gh-claude
+
+before:
+    hooks:
+        - go mod download
+
+env:
+    - CGO_ENABLED=0
+
+builds:
+    - id: gh-claude
+      main: .
+      binary: gh-claude
+      flags:
+          - -trimpath
+      ldflags:
+          - -s -w
+      goos:
+          - linux
+          - darwin
+          - windows
+      goarch:
+          - amd64
+          - arm64
+
+# Raw, per-platform binaries (no tar.gz wrapper): `gh` downloads the release asset
+# whose name matches gh-<ext>-<os>-<arch>[.exe], so the binary format plus this
+# name_template are what make the extension installable and upgradeable.
+archives:
+    - id: gh-claude
+      formats: [binary]
+      name_template: "gh-claude-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+    name_template: checksums.txt
+
+# ^ref: https://goreleaser.com/customization/sign/sign/
+# Keyless cosign signatures over each built binary; the reusable release workflow
+# installs cosign and supplies the GitHub Actions OIDC token. Local snapshot builds
+# skip this with --skip=sign.
+binary_signs:
+    - cmd: cosign
+      signature: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}.sigstore.json"
+      args:
+          - sign-blob
+          - --bundle=${signature}
+          - ${artifact}
+          - --yes
+      output: true
+
+sboms:
+    - artifacts: binary
+      # syft is pinned in tools/go.mod and invoked via `go tool` — no separate
+      # install. GoReleaser runs the SBOM command with its working directory set to
+      # dist/, hence the ../ on the modfile path.
+      cmd: go
+      args:
+          - tool
+          - -modfile=../tools/go.mod
+          - syft
+          - $artifact
+          - --output
+          - spdx-json=$document
+
+snapshot:
+    version_template: "{{ incpatch .Version }}-snapshot-{{ .ShortCommit }}"
+
+changelog:
+    sort: asc
+    use: github
+    format: "{{ .SHA }}: {{ .Message }}{{ if and (not .IsNightly) .Logins }} ({{ .Logins | englishJoin }}){{ end }}"
+    filters:
+        exclude:
+            - "^test"
+            - "^chore"
+            - "^build"
+    groups:
+        - title: "New Features"
+          regexp: '^.*?feat(\(.+\))??!?:.+$'
+          order: 100
+        - title: "Security Updates"
+          regexp: '^.*?sec(\(.+\))??!?:.+$'
+          order: 150
+        - title: "Bug Fixes"
+          regexp: '^.*?(fix|refactor)(\(.+\))??!?:.+$'
+          order: 200
+        - title: "Documentation Updates"
+          regexp: ^.*?docs?(\(.+\))??!?:.+$
+          order: 400
+        - title: Other Work
+          order: 9999
+
+release:
+    github:
+        owner: bitwise-media-group
+        name: gh-claude
+    # release-please leaves a draft release named after the tag it pushes. Adopt
+    # that draft instead of creating a second release, swap its release-please
+    # notes for the grouped changelog above, and undraft it only once every asset
+    # has been uploaded.
+    use_existing_draft: true
+    mode: replace

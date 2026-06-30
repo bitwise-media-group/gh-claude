@@ -100,12 +100,48 @@ When launching Claude, `gh-claude` adds to the child process environment only
 
 ## Development
 
+The `Makefile` is the entry point (`make help` lists every target). The Go developer
+CLIs (golangci-lint, govulncheck, gotestsum, gocover-cobertura, addlicense, goreleaser,
+syft) are pinned in `tools/go.mod` and run via `go tool` — no separate installs.
+
 ```sh
-go test ./...        # run the test suite
-go build -o gh-claude .
-gh extension install .   # install your local build for end-to-end testing
+make pr        # full local gate: tidy, license headers, fmt, lint, test, build
+make ci        # exactly what CI runs: lint, test, build
+make lint      # addlicense + golangci-lint + govulncheck (check mode)
+make test      # unit tests with coverage → coverage/
+make build     # build ./gh-claude
+make install   # build and install as a gh extension for end-to-end testing
+make snapshot  # local release snapshot (binaries + SBOMs, no publish/signing)
 ```
 
-Releases are built by `.github/workflows/release.yml` (via
-[`cli/gh-extension-precompile`](https://github.com/cli/gh-extension-precompile))
-on pushing a `vX.Y.Z` tag.
+## Continuous integration & automation
+
+This repo uses the org's reusable workflows (thin callers in `.github/workflows/`):
+
+- **`ci.yaml`** — runs `make lint/build/test` on every push and PR and uploads coverage.
+- **`security.yaml`** — CodeQL analysis of the Go module and the Actions workflows.
+- **`merge.yaml`** + **`merge-review-ack.yaml`** — fast-forward `/merge` and `/auto-merge`
+  flows that preserve commit signatures.
+- **`dependabot-merge.yaml`** — auto-approves and fast-forwards Dependabot minor/patch PRs
+  once CI is green (config in `.github/dependabot.yaml`).
+- **`merge-notice.yaml`** — posts a one-time `/merge` explainer on new PRs.
+
+The merge automation requires the org's "FF Merge" GitHub App (the `FF_MERGE_CLIENT_ID`
+variable + `FF_MERGE_PRIVATE_KEY` secret) and branch protection that requires PR review.
+
+## Releases
+
+Releases are driven by [release-please](https://github.com/googleapis/release-please)
+through the org's reusable release workflow (`.github/workflows/release.yaml`):
+Conventional Commit history keeps a release PR up to date, and merging it cuts the
+`vX.Y.Z` tag and a draft GitHub release. [GoReleaser](https://goreleaser.com)
+(`.goreleaser.yaml`) then adopts that draft and uploads the per-platform binaries
+named `gh-claude-<os>-<arch>[.exe]` — the exact asset names `gh extension install`
+and `gh extension upgrade` match on — alongside `checksums.txt`, keyless
+[cosign](https://github.com/sigstore/cosign) signatures, SPDX SBOMs
+([syft](https://github.com/anchore/syft)), and a SLSA build-provenance attestation
+over the checksums. Verify the provenance with:
+
+```sh
+gh attestation verify --owner bitwise-media-group gh-claude-<os>-<arch>
+```
