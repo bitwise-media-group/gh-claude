@@ -1,0 +1,6 @@
+{
+  "enabledPlugins": {
+    "workflow@bitwise": true,
+    "golang@bitwise": true
+  }
+}
