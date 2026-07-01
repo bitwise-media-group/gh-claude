@@ -153,14 +153,14 @@ func (b *fileBackend) writeFileAtomic(path string, data []byte) error {
 		return err
 	}
 	tmpName := tmp.Name()
-	defer os.Remove(tmpName) // no-op after a successful rename
+	defer func() { _ = os.Remove(tmpName) }() // no-op after a successful rename
 
 	if err := tmp.Chmod(0o600); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return err
 	}
 	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return err
 	}
 	if err := tmp.Close(); err != nil {
