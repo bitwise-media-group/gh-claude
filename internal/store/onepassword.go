@@ -65,7 +65,7 @@ type opBackend struct {
 
 // newOPBackend resolves the `op` binary, builds the backend from opts (falling
 // back to the environment), and probes that 1Password is reachable so we fail
-// loudly here rather than on the first Get/Set (mirroring the keyring
+// loudly here rather than on the first Get/Set (mirroring the native-store
 // reachability probe in New).
 func newOPBackend(opts Options) (*opBackend, error) {
 	path, err := exec.LookPath("op")

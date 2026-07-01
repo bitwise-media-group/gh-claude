@@ -53,6 +53,11 @@ lint: ## run all check-mode static analysis (addlicense, golangci-lint, govulnch
 	@ $(TOOL) golangci-lint run
 	@ $(TOOL) govulncheck ./...
 
+.PHONY: link
+link: build ## install the local copy of gh-claude as an extension
+	@ gh extensions remove claude 1>/dev/null 2>&1 || true
+	@ gh extensions install .
+
 # -covermode=atomic is the race-safe counter mode `-race` requires. gotestsum runs
 # the suite and writes a JUnit report in one pass (propagating the test exit code,
 # which a bare `go test | …` pipe would swallow); gocover-cobertura turns the profile

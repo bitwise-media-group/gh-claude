@@ -10,7 +10,8 @@ The token is:
 - **read/write on issues and pull requests**,
 - **scoped to all repositories you can access**,
 - **expiring after 7 days**, and
-- **stored in your OS keychain** (or an encrypted file where no keychain exists, e.g. WSL2),
+- **stored in your OS keychain** — the macOS Keychain or Windows Credential Manager —
+  falling back to an encrypted file where there is no OS keychain (Linux, WSL2),
   with [1Password as an optional alternative](#using-1password-optional).
 
 Claude only ever receives the scoped token through the `GITHUB_TOKEN` environment
@@ -95,12 +96,18 @@ When launching Claude, `gh-claude` adds to the child process environment only
 - **Env-var exposure.** As with any `GITHUB_TOKEN`, the value is readable by your
   own processes (e.g. `/proc/<pid>/environ` on Linux). This is inherent to the
   env-var delivery model; the read-only scope is what limits the risk.
-- **WSL2 / no-keychain fallback.** Where no OS keychain is reachable, the token is
-  stored in an encrypted file (mode `0600`) under your config directory. The
-  encryption key is derived from a stable machine identifier (`/etc/machine-id`);
-  this is defense-in-depth, **not** a hardware-backed secret — the machine id is
-  not itself secret, so the file's permissions are the primary protection. Run
-  `gh claude status` to see which backend is in use.
+- **Native keychains.** On macOS the token is stored in the login Keychain (via the
+  built-in `security` tool); on Windows, in the Credential Manager (via `advapi32`).
+  These backends use only the Go standard library — there is no third-party keyring
+  dependency and no cgo, so they work in the release binaries too.
+- **Linux / WSL2 / no-keychain fallback.** On Linux (including WSL2) and any host
+  without a native keychain, the token is stored in an encrypted file (mode `0600`)
+  under your config directory — this is the standard Linux backend, not an error
+  condition. The file is AES-256-GCM encrypted with a key derived (HKDF-SHA256)
+  from a stable machine identifier (`/etc/machine-id`, or a generated per-install
+  key where none exists); this is defense-in-depth, **not** a hardware-backed
+  secret — the machine id is not itself secret, so the file's permissions are the
+  primary protection. Run `gh claude status` to see which backend is in use.
 
 ## Using 1Password (optional)
 

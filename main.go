@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/bitwise-media-group/gh-claude/internal/browser"
@@ -205,10 +206,16 @@ func newProvisioner() token.Provisioner {
 }
 
 func warnIfFileFallback(st *store.Store) {
-	if st.IsFileFallback() {
-		_, _ = fmt.Fprintln(os.Stderr,
-			"warning: no OS keychain available; storing the token in an encrypted file (see README: Security model).")
+	// The encrypted file is the expected backend on Linux/BSD, so only warn on
+	// platforms that have a native keychain we expected to use but couldn't reach.
+	if !st.IsFileFallback() {
+		return
 	}
+	if runtime.GOOS != "darwin" && runtime.GOOS != "windows" {
+		return
+	}
+	_, _ = fmt.Fprintln(os.Stderr,
+		"warning: OS keychain unavailable; storing the token in an encrypted file (see README: Security model).")
 }
 
 // readToken prompts for and reads the pasted token, hiding input on a terminal.

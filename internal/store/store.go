@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: MIT
 
 // Package store persists a small secret blob in the most secure place available
-// on the host: the macOS Keychain or the Linux Secret Service when present, and
-// an encrypted, machine-bound file as a fallback (e.g. WSL2, where no Secret
-// Service daemon is usually running).
+// on the host: the macOS Keychain (via the `security` CLI) or the Windows
+// Credential Manager (via advapi32), and an encrypted, machine-bound file as the
+// fallback everywhere else — including Linux and WSL2, which use the file backend
+// directly. Backends are implemented against the standard library only; there is
+// no third-party keyring dependency and no cgo.
 //
 // The store is deliberately "dumb": it reads and writes opaque bytes by key.
 // Callers own the schema of what they store.
@@ -14,14 +16,10 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
-
-	"github.com/99designs/keyring"
 )
 
 // ServiceName is the service/collection identifier used across backends.
@@ -29,10 +27,10 @@ const ServiceName = "gh-claude"
 
 // Backend names surfaced to the caller for diagnostics.
 const (
-	BackendKeychain      = "keychain"
-	BackendSecretService = "secret-service"
-	BackendFile          = "encrypted-file"
-	Backend1Password     = "1password"
+	BackendKeychain          = "keychain"
+	BackendCredentialManager = "credential-manager"
+	BackendFile              = "encrypted-file"
+	Backend1Password         = "1password"
 )
 
 // backend is the pluggable persistence implementation behind a Store. Each OS
@@ -76,8 +74,9 @@ type Options struct {
 // New resolves and opens the best available backend for this host. When the user
 // opts into 1Password (--op or GH_CLAUDE_STORE), that backend is used exclusively
 // and an unreachable op is a hard error. Otherwise it prefers the native OS
-// keychain and falls back to the encrypted file backend if the keychain cannot be
-// reached (the common WSL2 case).
+// keychain (macOS Keychain, Windows Credential Manager) and falls back to the
+// encrypted file backend on hosts with no native keychain (Linux, WSL2) or when
+// the native store is unreachable.
 func New(opts Options) (*Store, error) {
 	if opts.UseOnePassword || onePasswordRequested() {
 		b, err := newOPBackend(opts)
@@ -87,26 +86,20 @@ func New(opts Options) (*Store, error) {
 		return &Store{impl: b, backend: Backend1Password, detail: "vault: " + b.vault}, nil
 	}
 
-	var lastErr error
-	for _, b := range preferredBackends() {
-		ring, err := open(b)
-		if err != nil {
-			lastErr = err
-			continue
-		}
-		// Opening is lazy; probe with a cheap list to confirm the backend is
-		// actually reachable (e.g. Secret Service may be compiled in but have
-		// no D-Bus daemon behind it on WSL2).
-		if _, err := ring.Keys(); err != nil {
-			lastErr = err
-			continue
-		}
-		return &Store{impl: keyringBackend{ring: ring}, backend: backendName(b)}, nil
+	// Prefer the platform-native credential store (macOS Keychain, Windows
+	// Credential Manager). newNativeBackend returns a nil backend on platforms
+	// with no native store (e.g. Linux), so we fall back to the encrypted file.
+	// A non-nil error means a native store exists but is unreachable; we fall
+	// back to the file backend in that case too rather than failing outright.
+	if b, name, err := newNativeBackend(); err == nil && b != nil {
+		return &Store{impl: b, backend: name}, nil
 	}
-	if lastErr == nil {
-		lastErr = errors.New("no usable secret storage backend found")
+
+	fb, err := newFileBackend(fileDir(), filePassword)
+	if err != nil {
+		return nil, fmt.Errorf("opening secret store: %w", err)
 	}
-	return nil, fmt.Errorf("opening secret store: %w", lastErr)
+	return &Store{impl: fb, backend: BackendFile}, nil
 }
 
 // Get returns the bytes stored under key. The boolean is false (with a nil
@@ -118,80 +111,6 @@ func (s *Store) Set(key string, data []byte) error { return s.impl.set(key, data
 
 // Delete removes the item under key. Removing a missing key is not an error.
 func (s *Store) Delete(key string) error { return s.impl.delete(key) }
-
-// keyringBackend persists items in an OS keychain (macOS Keychain, Windows
-// Credential Manager, Linux Secret Service) or the encrypted file fallback, via
-// the 99designs/keyring library.
-type keyringBackend struct {
-	ring keyring.Keyring
-}
-
-func (k keyringBackend) get(key string) ([]byte, bool, error) {
-	item, err := k.ring.Get(key)
-	if errors.Is(err, keyring.ErrKeyNotFound) {
-		return nil, false, nil
-	}
-	if err != nil {
-		return nil, false, err
-	}
-	return item.Data, true, nil
-}
-
-func (k keyringBackend) set(key string, data []byte) error {
-	return k.ring.Set(keyring.Item{
-		Key:         key,
-		Data:        data,
-		Label:       ServiceName,
-		Description: "gh-claude scoped GitHub token",
-	})
-}
-
-// delete removes the item under key. Removing a missing key is not an error.
-// (The file backend reports a missing item as an OS not-exist error rather than
-// keyring.ErrKeyNotFound, so both are tolerated.)
-func (k keyringBackend) delete(key string) error {
-	err := k.ring.Remove(key)
-	if err == nil || errors.Is(err, keyring.ErrKeyNotFound) || errors.Is(err, os.ErrNotExist) {
-		return nil
-	}
-	return err
-}
-
-// preferredBackends returns the ordered list of backends to try for this OS,
-// always ending with the file backend so there is a usable fallback.
-func preferredBackends() []keyring.BackendType {
-	switch runtime.GOOS {
-	case "darwin":
-		return []keyring.BackendType{keyring.KeychainBackend, keyring.FileBackend}
-	case "windows":
-		return []keyring.BackendType{keyring.WinCredBackend, keyring.FileBackend}
-	default:
-		return []keyring.BackendType{keyring.SecretServiceBackend, keyring.FileBackend}
-	}
-}
-
-func backendName(b keyring.BackendType) string {
-	switch b {
-	case keyring.KeychainBackend:
-		return BackendKeychain
-	case keyring.SecretServiceBackend:
-		return BackendSecretService
-	default:
-		return BackendFile
-	}
-}
-
-func open(b keyring.BackendType) (keyring.Keyring, error) {
-	return keyring.Open(keyring.Config{
-		ServiceName:                    ServiceName,
-		AllowedBackends:                []keyring.BackendType{b},
-		KeychainTrustApplication:       true,
-		KeychainAccessibleWhenUnlocked: true,
-		LibSecretCollectionName:        ServiceName,
-		FileDir:                        fileDir(),
-		FilePasswordFunc:               filePassword,
-	})
-}
 
 // fileDir is where the encrypted file backend keeps its items.
 func fileDir() string {
