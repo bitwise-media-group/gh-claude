@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "sequence": 3,
+  "issued_at": "2026-07-02T04:15:43Z",
+  "expires_at": "2026-08-02T04:15:43Z",
+  "min_safe_version": "0.2.1"
+}

@@ -30,7 +30,7 @@ VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 # sk-ssh-ed25519 YubiKey handle), and verifies the result against the embedded
 # policy keys before moving it into place.
 POLICY     ?= docs/policy.json
-POLICY_KEY ?= ${HOME}/.ssh/id_sk_current
+POLICY_KEY ?= ${HOME}/.ssh/id_sk_gh-claude-policy
 
 .DEFAULT_GOAL := help
 
