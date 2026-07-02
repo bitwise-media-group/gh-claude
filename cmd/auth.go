@@ -12,11 +12,9 @@ import (
 
 func loginCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:           "login",
-		Short:         "Create or refresh the stored token without launching Claude",
-		Args:          cobra.NoArgs,
-		SilenceUsage:  true,
-		SilenceErrors: true,
+		Use:   "login",
+		Short: "Create or refresh the stored token without launching Claude",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := integrityGate(cmd.Context()); err != nil {
 				return err
@@ -38,11 +36,9 @@ func loginCmd() *cobra.Command {
 
 func logoutCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:           "logout",
-		Short:         "Remove the stored token",
-		Args:          cobra.NoArgs,
-		SilenceUsage:  true,
-		SilenceErrors: true,
+		Use:   "logout",
+		Short: "Remove the stored token",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			mgr, _, err := newManager(storeOptions(cmd))
 			if err != nil {
@@ -59,11 +55,9 @@ func logoutCmd() *cobra.Command {
 
 func statusCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:           "status",
-		Short:         "Show the stored token's account and expiry",
-		Args:          cobra.NoArgs,
-		SilenceUsage:  true,
-		SilenceErrors: true,
+		Use:   "status",
+		Short: "Show the stored token's account and expiry",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			mgr, st, err := newManager(storeOptions(cmd))
 			if err != nil {

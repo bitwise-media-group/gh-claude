@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/bitwise-media-group/gh-claude/internal/integrity"
 	"github.com/bitwise-media-group/gh-claude/internal/store"
@@ -32,9 +31,7 @@ store, using "gh attestation verify". Needs network access to GitHub.
 By default it asserts only that the binary was built by this org's CI from this
 repository. Use --signer-workflow to pin the exact building workflow, or
 --cert-identity for a signer-identity regexp.`,
-		Args:          cobra.NoArgs,
-		SilenceUsage:  true,
-		SilenceErrors: true,
+		Args: cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			path, err := integrity.RunningBinaryPath()
 			if err != nil {
@@ -63,11 +60,9 @@ repository. Use --signer-workflow to pin the exact building workflow, or
 // versionCmd prints the injected build version.
 func versionCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:           "version",
-		Short:         "Print the gh-claude version",
-		Args:          cobra.NoArgs,
-		SilenceUsage:  true,
-		SilenceErrors: true,
+		Use:   "version",
+		Short: "Print the gh-claude version",
+		Args:  cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			fmt.Println(version)
 			return nil
@@ -86,7 +81,7 @@ func integrityGate(ctx context.Context) error {
 	if os.Getenv("GH_CLAUDE_SKIP_INTEGRITY") != "" {
 		return nil
 	}
-	chk := integrity.New(version, configDir())
+	chk := integrity.New(version, store.ConfigDir())
 	if url := os.Getenv("GH_CLAUDE_POLICY_URL"); url != "" {
 		chk.URL = url // self-host / testing override
 	}
@@ -97,16 +92,4 @@ func integrityGate(ctx context.Context) error {
 		_, _ = fmt.Fprintln(os.Stderr, "warning: "+res.Message)
 	}
 	return nil
-}
-
-// configDir is where the cached security policy lives — the same per-user config
-// directory the secret store uses (…/gh-claude).
-func configDir() string {
-	if dir, err := os.UserConfigDir(); err == nil {
-		return filepath.Join(dir, store.ServiceName)
-	}
-	if home, err := os.UserHomeDir(); err == nil {
-		return filepath.Join(home, ".config", store.ServiceName)
-	}
-	return "." + store.ServiceName
 }

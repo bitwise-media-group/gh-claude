@@ -12,24 +12,15 @@ import (
 	gh "github.com/cli/go-gh/v2"
 )
 
-// Defaults describing who is allowed to have built a genuine gh-claude binary.
-// These are the assertions `gh claude verify` makes against GitHub's Sigstore
-// attestation store.
-const (
-	// AttestOwner is the org whose attestations are trusted.
-	AttestOwner = "bitwise-media-group"
-	// AttestRepo is the source repository the build provenance must name.
-	AttestRepo = "bitwise-media-group/gh-claude"
-)
+// AttestRepo is the source repository a genuine gh-claude binary's build
+// provenance must name — the assertion `gh claude verify` makes against
+// GitHub's Sigstore attestation store.
+const AttestRepo = "bitwise-media-group/gh-claude"
 
-// VerifyOptions tunes the provenance assertion. The zero value verifies against
-// AttestRepo, which is the minimal honest claim ("built by this org's CI from
-// this repo"); SignerWorkflow tightens it to an exact build path. Owner is an
-// alternative, looser scope (any repo under the org) and is mutually exclusive
-// with Repo — gh rejects passing both — so Repo wins when both are set.
+// VerifyOptions tunes the provenance assertion. The zero value asserts the
+// minimal honest claim ("built by this org's CI from AttestRepo");
+// SignerWorkflow tightens it to an exact build path.
 type VerifyOptions struct {
-	Owner          string // org scope; used only when Repo is empty
-	Repo           string // "owner/repo"; defaults to AttestRepo, and takes precedence over Owner
 	SignerWorkflow string // e.g. "bitwise-media-group/github-workflows/.github/workflows/release.yaml"
 	CertIdentity   string // regexp alternative to SignerWorkflow
 	JSON           bool   // request --format json instead of the human summary
@@ -51,17 +42,7 @@ var execGH = func(args ...string) (stdout, stderr string, err error) {
 // failure — a verification failure is a security signal the caller should show
 // verbatim.
 func VerifyBinary(path string, opts VerifyOptions) (string, error) {
-	// gh treats --owner and --repo as mutually exclusive; --repo is the stricter
-	// claim, so prefer it and only fall back to --owner when no repo is given.
-	args := []string{"attestation", "verify", path}
-	switch {
-	case opts.Repo != "":
-		args = append(args, "--repo", opts.Repo)
-	case opts.Owner != "":
-		args = append(args, "--owner", opts.Owner)
-	default:
-		args = append(args, "--repo", AttestRepo)
-	}
+	args := []string{"attestation", "verify", path, "--repo", AttestRepo}
 	switch {
 	case opts.SignerWorkflow != "":
 		args = append(args, "--signer-workflow", opts.SignerWorkflow)

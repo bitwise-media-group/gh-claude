@@ -76,10 +76,8 @@ func (m *Manager) Ensure(forceRefresh bool, p Provisioner) (*Record, error) {
 		if err != nil {
 			return nil, err
 		}
-		if rec != nil && !rec.needsRefresh(m.now()) {
-			if m.verifyReusable(rec) {
-				return rec, nil
-			}
+		if rec != nil && !rec.needsRefresh(m.now()) && m.verifyReusable(rec) {
+			return rec, nil
 		}
 	}
 	return m.provision(p)

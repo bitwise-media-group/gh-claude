@@ -95,7 +95,7 @@ func New(opts Options) (*Store, error) {
 		return &Store{impl: b, backend: name}, nil
 	}
 
-	fb, err := newFileBackend(fileDir(), filePassword)
+	fb, err := newFileBackend(ConfigDir(), filePassword)
 	if err != nil {
 		return nil, fmt.Errorf("opening secret store: %w", err)
 	}
@@ -112,8 +112,10 @@ func (s *Store) Set(key string, data []byte) error { return s.impl.set(key, data
 // Delete removes the item under key. Removing a missing key is not an error.
 func (s *Store) Delete(key string) error { return s.impl.delete(key) }
 
-// fileDir is where the encrypted file backend keeps its items.
-func fileDir() string {
+// ConfigDir is gh-claude's per-user config directory (…/gh-claude), where the
+// encrypted file backend keeps its items and other packages keep small state
+// such as the cached security policy.
+func ConfigDir() string {
 	if dir, err := os.UserConfigDir(); err == nil {
 		return filepath.Join(dir, ServiceName)
 	}
@@ -150,7 +152,7 @@ func machineID() string {
 // installKey returns a random per-install key, generating and persisting it
 // (0600) the first time. Used only when no machine id is available.
 func installKey() (string, error) {
-	path := filepath.Join(fileDir(), "install-key")
+	path := filepath.Join(ConfigDir(), "install-key")
 	if b, err := os.ReadFile(path); err == nil {
 		if s := strings.TrimSpace(string(b)); s != "" {
 			return s, nil

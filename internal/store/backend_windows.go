@@ -137,6 +137,6 @@ func (c credmanBackend) delete(key string) error {
 // isCredNotFound reports whether a Cred* syscall failed because the item does
 // not exist (ERROR_NOT_FOUND).
 func isCredNotFound(callErr error) bool {
-	var errno syscall.Errno
-	return errors.As(callErr, &errno) && errno == errorNotFound
+	errno, ok := errors.AsType[syscall.Errno](callErr)
+	return ok && errno == errorNotFound
 }

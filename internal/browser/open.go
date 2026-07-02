@@ -18,7 +18,7 @@ import (
 // browser; elsewhere it uses the platform default. A non-nil error means the
 // caller should print the URL for the user to open manually.
 func Open(url string) error {
-	if IsWSL() {
+	if isWSL() {
 		if err := openWSL(url); err == nil {
 			return nil
 		}
@@ -27,8 +27,8 @@ func Open(url string) error {
 	return clibrowser.OpenURL(url)
 }
 
-// IsWSL reports whether we are running under the Windows Subsystem for Linux.
-func IsWSL() bool {
+// isWSL reports whether we are running under the Windows Subsystem for Linux.
+func isWSL() bool {
 	if runtime.GOOS != "linux" {
 		return false
 	}

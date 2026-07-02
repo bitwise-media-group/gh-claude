@@ -6,6 +6,7 @@
 package launch
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 )
@@ -21,7 +22,7 @@ func execProcess(bin string, argv, env []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 			os.Exit(exitErr.ExitCode())
 		}
 		return err

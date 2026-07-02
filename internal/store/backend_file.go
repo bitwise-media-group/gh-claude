@@ -13,6 +13,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/bitwise-media-group/gh-claude/internal/atomicfile"
 )
 
 // fileFormatVersion tags the on-disk blob layout so a future format change can be
@@ -142,31 +144,7 @@ func (b *fileBackend) set(key string, data []byte) error {
 	blob = append(blob, nonce...)
 	blob = aead.Seal(blob, nonce, data, aad(key))
 
-	return b.writeFileAtomic(b.filename(key), blob)
-}
-
-// writeFileAtomic writes to a temp file in the same directory (0600) and renames
-// it into place, so a reader never observes a partially written blob.
-func (b *fileBackend) writeFileAtomic(path string, data []byte) error {
-	tmp, err := os.CreateTemp(b.dir, ".tmp-*")
-	if err != nil {
-		return err
-	}
-	tmpName := tmp.Name()
-	defer func() { _ = os.Remove(tmpName) }() // no-op after a successful rename
-
-	if err := tmp.Chmod(0o600); err != nil {
-		_ = tmp.Close()
-		return err
-	}
-	if _, err := tmp.Write(data); err != nil {
-		_ = tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	return os.Rename(tmpName, path)
+	return atomicfile.Write(b.filename(key), blob, 0o600)
 }
 
 func (b *fileBackend) delete(key string) error {

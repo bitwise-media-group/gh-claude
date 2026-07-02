@@ -132,8 +132,8 @@ func (e *secError) Unwrap() error { return e.err }
 // isSecNotFound reports whether a `security` error means the item is not in the
 // keychain, which get and delete treat as "absent".
 func isSecNotFound(err error) bool {
-	var se *secError
-	if !errors.As(err, &se) {
+	se, ok := errors.AsType[*secError](err)
+	if !ok {
 		return false
 	}
 	return se.code == secItemNotFoundExit ||

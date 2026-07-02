@@ -50,10 +50,12 @@ keychain, and --vault to choose the vault.
 
 Pass arguments through to claude after "--", e.g.:
   gh claude -- --resume`,
-		Args:          cobra.ArbitraryArgs,
-		Version:       version,
-		SilenceUsage:  true,
-		SilenceErrors: true,
+		Args:    cobra.ArbitraryArgs,
+		Version: version,
+		// Cobra honors the root's silence flags for subcommand failures too, so
+		// they are set only here.
+		SilenceUsage:  true, // errors are failures, not usage mistakes
+		SilenceErrors: true, // main prints the error once
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runLaunch(cmd.Context(), refresh, storeOptions(cmd), passthroughArgs(cmd, args))
 		},

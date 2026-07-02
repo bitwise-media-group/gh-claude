@@ -149,10 +149,8 @@ func (b *opBackend) set(key string, data []byte) error {
 	if err != nil {
 		return err
 	}
-	if _, err := b.run(b.opArgs("item", "create", "--vault", b.vault, "-"), tmpl); err != nil {
-		return err
-	}
-	return nil
+	_, err = b.run(b.opArgs("item", "create", "--vault", b.vault, "-"), tmpl)
+	return err
 }
 
 // delete removes the item. A missing item is not an error.
@@ -199,8 +197,8 @@ func (e *opCmdError) Unwrap() error { return e.err }
 // isOPNotFound reports whether an op error means the referenced item does not
 // exist, which both get and delete treat as "absent" rather than a failure.
 func isOPNotFound(err error) bool {
-	var ce *opCmdError
-	if !errors.As(err, &ce) {
+	ce, ok := errors.AsType[*opCmdError](err)
+	if !ok {
 		return false
 	}
 	s := strings.ToLower(ce.stderr)
