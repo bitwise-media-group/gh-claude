@@ -1,0 +1,14 @@
+# Generated output — byte-stability matters more than style.
+docs/cli/
+package-lock.json
+dist/
+AGENTS.md
+CLAUDE.md
+.claude/
+
+# goreleaser config carries Go templates prettier mangles
+.goreleaser.yaml
+
+# release-please writes both; its release PRs must not trip the format gate
+CHANGELOG.md
+.release-please-manifest.json

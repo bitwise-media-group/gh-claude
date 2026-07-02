@@ -1,0 +1,21 @@
+{
+    "name": "gh-claude",
+    "version": "0.1.0",
+    "license": "MIT",
+    "private": "true",
+    "scripts": {
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "lint": "markdownlint-cli2 '**/*.md'",
+        "lint:fix": "markdownlint-cli2 --fix '**/*.md'"
+    },
+    "author": {
+        "name": "BitWise Media Group Ltd.",
+        "email": "oss@bitwisemedia.uk",
+        "url": "https://oss.bitwisemedia.uk"
+    },
+    "devDependencies": {
+        "markdownlint-cli2": "0.22.1",
+        "prettier": "3.8.4"
+    }
+}

@@ -1,0 +1,25 @@
+# Copyright 2026 Bitwise Media Group Ltd.
+# SPDX-License-Identifier: MIT
+
+config:
+    # House prose wraps at 120 columns.
+    MD013:
+        line_length: 120
+        code_blocks: false
+        tables: false
+    # Command reference pages use multiple top-level headings.
+    MD025: false
+    MD041: false
+    # pymdownx admonition bodies (`!!! note`) require a 4-space indent that a
+    # CommonMark parser reads as an indented code block, which collides with the
+    # repo's fenced code blocks. Material renders the admonitions natively, so
+    # turn off the code-block-style consistency check.
+    MD046: false
+ignores:
+    - "docs/cli/**"
+    - "node_modules/**"
+    # Vendored markdown from the zensical virtualenv (uv); git-ignored like node_modules.
+    - ".venv/**"
+    - "dist/**"
+    - ".claude/**"
+    - "CHANGELOG.md"

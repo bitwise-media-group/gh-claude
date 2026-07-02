@@ -5,3 +5,12 @@
 /dist/
 # Test coverage + results (emitted by `make test`)
 /coverage/
+
+# Docs site (zensical build output)
+/site/
+
+# Python (zensical via uv)
+/.venv/
+
+# Node tooling
+node_modules/

@@ -40,7 +40,7 @@ help: ## List available targets
 		| awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
 .PHONY: pr
-pr: tidy license fmt lint test build ## full local gate before opening a pull request
+pr: tidy license fmt lint test build docs ## full local gate before opening a pull request
 
 .PHONY: ci
 ci: lint test build ## the gates the reusable CI workflow runs
@@ -50,21 +50,32 @@ tidy: ## tidy the app and tools module graphs
 	@ rm -f go.sum; go mod tidy
 	@ go -C tools mod tidy
 
+# Install the pinned Node tools (prettier, markdownlint-cli2) exactly as locked
+# in package-lock.json, and run them straight from node_modules via `npm run` —
+# never a global or npx copy. Re-runs only when package.json / the lockfile change.
+node_modules: package.json package-lock.json
+	@ npm ci --ignore-scripts --no-fund
+	@ touch node_modules
+
 .PHONY: fmt
-fmt: ## format the code and inject license headers
+fmt: node_modules ## format the code and prose, and inject license headers
 	@ go fmt ./...
 	@ $(TOOL) golangci-lint run --fix
 	@ $(TOOL) addlicense -l mit -c $(LICENSE_HOLDER) -s=only $(LICENSE_IGNORE) .
+	@ npm run lint:fix
+	@ npm run format
 
 .PHONY: license
 license: ## inject SPDX license headers (addlicense)
 	@ $(TOOL) addlicense -l mit -c $(LICENSE_HOLDER) -s=only $(LICENSE_IGNORE) .
 
 .PHONY: lint
-lint: ## run all check-mode static analysis (addlicense, golangci-lint, govulncheck)
+lint: node_modules ## run all check-mode static analysis (addlicense, golangci-lint, govulncheck, markdownlint, prettier)
 	@ $(TOOL) addlicense -l mit -c $(LICENSE_HOLDER) -s=only $(LICENSE_IGNORE) -check .
 	@ $(TOOL) golangci-lint run
 	@ $(TOOL) govulncheck ./...
+	@ npm run lint
+	@ npm run format:check
 
 # -covermode=atomic is the race-safe counter mode `-race` requires. gotestsum runs
 # the suite and writes a JUnit report in one pass (propagating the test exit code,
@@ -86,6 +97,21 @@ build: ## build the extension binary (./gh-claude)
 install: build ## install the local build as a gh extension for end-to-end testing
 	@ gh extension remove claude >/dev/null 2>&1 || true
 	@ gh extension install .
+
+# The extension is distributed only through `gh extension install` (no Homebrew
+# cask), so no man pages are generated here — the hidden docs command keeps the
+# format available (`./gh-claude docs --format man`) for ad-hoc use.
+.PHONY: docs
+docs: build ## regenerate the CLI reference (docs/cli) and build the docs site
+	@ ./$(APP) docs --out docs/cli --format markdown
+	@ uv run zensical build
+
+# Docs site (Zensical). Kept out of `ci` so that gate needs no Python; run
+# these directly. `uv` provisions Python + zensical from pyproject.toml on first
+# use. The built site/ is git-ignored.
+.PHONY: serve
+serve: ## serve the docs site locally (zensical)
+	@ uv run zensical serve
 
 # --skip=sign: cosign keyless signing needs the GitHub Actions OIDC token, so it
 # only works in the release workflow — locally it would fail or prompt.

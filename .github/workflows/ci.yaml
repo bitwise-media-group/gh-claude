@@ -5,8 +5,9 @@
 # the canonical Makefile gates (lint, build, test) as one parallel job each, then a
 # Codecov upload from coverage/cobertura-coverage.xml (coverage) and
 # coverage/junit.xml (test results) — both emitted by `make test`. `make lint`
-# carries the check-mode static analysis: addlicense, golangci-lint, govulncheck.
-# The Go version comes from go.mod.
+# carries all check-mode static analysis — addlicense, golangci-lint, govulncheck,
+# markdownlint, prettier --check. The Go version comes from go.mod and the Node
+# version from package.json.
 #
 # The reusable workflow is pinned to a full commit SHA (tag in the comment) so a
 # moved tag can never change what runs; Dependabot keeps the pin fresh.
