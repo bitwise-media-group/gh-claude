@@ -28,9 +28,11 @@ func verifyCmd() *cobra.Command {
 bitwise-media-group's release workflow and recorded in GitHub's attestation
 store, using "gh attestation verify". Needs network access to GitHub.
 
-By default it asserts only that the binary was built by this org's CI from this
-repository. Use --signer-workflow to pin the exact building workflow, or
---cert-identity for a signer-identity regexp.
+By default it asserts that the binary was built from this repository by the
+org's reusable release workflow (every release is built through it, and the
+attestation's signer identity names that workflow, so a bare repository check
+could never pass). Use --signer-workflow to assert a different building
+workflow, or --cert-identity for a signer-identity regexp.
 
 On Apple Silicon macOS, gh ad-hoc re-signs extension binaries when it installs
 them, so the installed binary's digest matches no attestation. When direct
@@ -49,6 +51,8 @@ binary.`,
 				CertIdentity:   certIdentity,
 				JSON:           jsonOut,
 				Tag:            integrity.ReleaseTag(version),
+				// Steps land on stderr so --json keeps stdout parseable.
+				Progress: os.Stderr,
 			})
 			if err != nil {
 				return err
@@ -58,7 +62,8 @@ binary.`,
 		},
 	}
 	cmd.Flags().StringVar(&signerWorkflow, "signer-workflow", "",
-		"require this exact building workflow (owner/repo/.github/workflows/file.yaml)")
+		"require this exact building workflow (owner/repo/.github/workflows/file.yaml)\n"+
+			"(default: the org's reusable release workflow)")
 	cmd.Flags().StringVar(&certIdentity, "cert-identity", "",
 		"require a signer identity matching this regexp (alternative to --signer-workflow)")
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "print gh's JSON verification result")

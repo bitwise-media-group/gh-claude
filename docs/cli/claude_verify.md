@@ -8,9 +8,11 @@ Verify that the running gh-claude binary was built by
 bitwise-media-group's release workflow and recorded in GitHub's attestation
 store, using "gh attestation verify". Needs network access to GitHub.
 
-By default it asserts only that the binary was built by this org's CI from this
-repository. Use --signer-workflow to pin the exact building workflow, or
---cert-identity for a signer-identity regexp.
+By default it asserts that the binary was built from this repository by the
+org's reusable release workflow (every release is built through it, and the
+attestation's signer identity names that workflow, so a bare repository check
+could never pass). Use --signer-workflow to assert a different building
+workflow, or --cert-identity for a signer-identity regexp.
 
 On Apple Silicon macOS, gh ad-hoc re-signs extension binaries when it installs
 them, so the installed binary's digest matches no attestation. When direct
@@ -30,6 +32,7 @@ claude verify [flags]
   -h, --help                     help for verify
       --json                     print gh's JSON verification result
       --signer-workflow string   require this exact building workflow (owner/repo/.github/workflows/file.yaml)
+                                 (default: the org's reusable release workflow)
 ```
 
 ### Options inherited from parent commands

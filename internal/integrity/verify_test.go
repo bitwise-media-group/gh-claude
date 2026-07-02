@@ -77,10 +77,11 @@ func fallbackGH(t *testing.T, running string, pristine []byte, calls *[][]string
 	})
 }
 
-// writeBinary creates a file for the test to treat as the running binary.
-func writeBinary(t *testing.T, dir, name string, content []byte) string {
+// writeBinary creates a file named as the installed extension binary for the
+// test to treat as the running binary.
+func writeBinary(t *testing.T, dir string, content []byte) string {
 	t.Helper()
-	path := filepath.Join(dir, name)
+	path := filepath.Join(dir, InstalledName)
 	if err := os.WriteFile(path, content, 0o755); err != nil {
 		t.Fatalf("write %s: %v", path, err)
 	}
@@ -102,7 +103,15 @@ func TestVerifyBinaryDefaults(t *testing.T) {
 		t.Error("expected gh's report to be returned")
 	}
 	joined := strings.Join(got, " ")
-	for _, want := range []string{"attestation verify /path/to/gh-claude", "--repo " + AttestRepo} {
+	// Every release is built by the org's reusable workflow, whose identity the
+	// attestation certificate names — without --signer-workflow the default
+	// claim could never verify.
+	wants := []string{
+		"attestation verify /path/to/gh-claude",
+		"--repo " + AttestRepo,
+		"--signer-workflow " + DefaultSignerWorkflow,
+	}
+	for _, want := range wants {
 		if !strings.Contains(joined, want) {
 			t.Errorf("args %q missing %q", joined, want)
 		}
@@ -110,6 +119,24 @@ func TestVerifyBinaryDefaults(t *testing.T) {
 	// --owner and --repo are mutually exclusive in gh; the default must send only --repo.
 	if strings.Contains(joined, "--owner") {
 		t.Errorf("args %q must not pass --owner alongside --repo", joined)
+	}
+}
+
+func TestVerifyBinaryCertIdentityOverridesDefaultSigner(t *testing.T) {
+	var got []string
+	withExecGH(t, func(args ...string) (string, string, error) {
+		got = args
+		return "ok", "", nil
+	})
+	if _, err := VerifyBinary("/bin/x", VerifyOptions{CertIdentity: "^https://github.com/acme/"}); err != nil {
+		t.Fatalf("VerifyBinary: %v", err)
+	}
+	joined := strings.Join(got, " ")
+	if !strings.Contains(joined, "--cert-identity-regex ^https://github.com/acme/") {
+		t.Errorf("args %q missing cert-identity regex", joined)
+	}
+	if strings.Contains(joined, "--signer-workflow") {
+		t.Errorf("args %q must not combine --signer-workflow with --cert-identity-regex", joined)
 	}
 }
 
@@ -148,7 +175,7 @@ func TestVerifyBinaryPropagatesFailure(t *testing.T) {
 func TestVerifyBinaryFallbackMatchesResignedAsset(t *testing.T) {
 	withResignedOnInstall(t, true)
 	pristine := []byte("pristine release asset")
-	running := writeBinary(t, t.TempDir(), InstalledName, append(pristine, []byte(resignSuffix)...))
+	running := writeBinary(t, t.TempDir(), append(pristine, []byte(resignSuffix)...))
 
 	var calls [][]string
 	fallbackGH(t, running, pristine, &calls)
@@ -186,7 +213,7 @@ func TestVerifyBinaryFallbackMatchesResignedAsset(t *testing.T) {
 
 func TestVerifyBinaryFallbackRejectsMismatch(t *testing.T) {
 	withResignedOnInstall(t, true)
-	running := writeBinary(t, t.TempDir(), InstalledName, []byte("tampered binary"+resignSuffix))
+	running := writeBinary(t, t.TempDir(), []byte("tampered binary"+resignSuffix))
 
 	var calls [][]string
 	fallbackGH(t, running, []byte("pristine release asset"), &calls)
@@ -204,7 +231,7 @@ func TestVerifyBinaryFallbackRejectsMismatch(t *testing.T) {
 
 func TestVerifyBinaryFallbackPropagatesAssetFailure(t *testing.T) {
 	withResignedOnInstall(t, true)
-	running := writeBinary(t, t.TempDir(), InstalledName, []byte("installed"))
+	running := writeBinary(t, t.TempDir(), []byte("installed"))
 
 	withExecGH(t, func(args ...string) (string, string, error) {
 		if args[0] == "release" {
@@ -251,6 +278,65 @@ func TestVerifyBinarySkipsFallback(t *testing.T) {
 				t.Errorf("gh called %d times, want only the direct verification", len(calls))
 			}
 		})
+	}
+}
+
+func TestVerifyBinaryReportsProgress(t *testing.T) {
+	withResignedOnInstall(t, true)
+	pristine := []byte("pristine release asset")
+	running := writeBinary(t, t.TempDir(), append(pristine, []byte(resignSuffix)...))
+
+	var calls [][]string
+	fallbackGH(t, running, pristine, &calls)
+	var signed string
+	appendingCodesign(t, &signed)
+
+	var progress strings.Builder
+	if _, err := VerifyBinary(running, VerifyOptions{Tag: "v0.2.0", Progress: &progress}); err != nil {
+		t.Fatalf("VerifyBinary: %v", err)
+	}
+
+	// Off-terminal a strings.Builder gets plain finished lines: the failed
+	// direct check, then one green-check line per fallback stage.
+	wants := []string{
+		"✗ Checking the running binary",
+		"✓ Downloading " + assetName() + " from release v0.2.0",
+		"✓ Verifying the release asset's build provenance",
+		"✓ Re-signing the asset copy",
+		"✓ Comparing the running binary",
+	}
+	lines := strings.Split(strings.TrimSpace(progress.String()), "\n")
+	var marked []string
+	for _, l := range lines {
+		if !strings.HasPrefix(l, "  ") { // skip the indented explanation
+			marked = append(marked, l)
+		}
+	}
+	if len(marked) != len(wants) {
+		t.Fatalf("progress lines = %q, want %d step lines", lines, len(wants))
+	}
+	for i, want := range wants {
+		if !strings.HasPrefix(marked[i], want) {
+			t.Errorf("step %d = %q, want prefix %q", i, marked[i], want)
+		}
+	}
+}
+
+func TestVerifyBinaryProgressMarksFailedStep(t *testing.T) {
+	withResignedOnInstall(t, true)
+	running := writeBinary(t, t.TempDir(), []byte("tampered"+resignSuffix))
+
+	var calls [][]string
+	fallbackGH(t, running, []byte("pristine release asset"), &calls)
+	var signed string
+	appendingCodesign(t, &signed)
+
+	var progress strings.Builder
+	if _, err := VerifyBinary(running, VerifyOptions{Tag: "v0.2.0", Progress: &progress}); err == nil {
+		t.Fatal("expected mismatch error")
+	}
+	if !strings.Contains(progress.String(), "✗ Comparing the running binary") {
+		t.Errorf("progress %q should mark the comparison step failed", progress.String())
 	}
 }
 

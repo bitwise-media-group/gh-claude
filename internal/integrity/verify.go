@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,6 +23,16 @@ import (
 // GitHub's Sigstore attestation store.
 const AttestRepo = "bitwise-media-group/gh-claude"
 
+// DefaultSignerWorkflow is the org's reusable release workflow, which every
+// release is intentionally built through. It must be asserted explicitly:
+// the Fulcio certificate's signer identity (its SAN) names the reusable
+// workflow's repository, not AttestRepo, so a bare `gh attestation verify
+// --repo` — which requires a signer inside the artifact's own repository —
+// can never pass. Passing --signer-workflow keeps the source-repository
+// check on AttestRepo while pinning the signer to this workflow, which is
+// both the claim that verifies and a stronger one.
+const DefaultSignerWorkflow = "bitwise-media-group/github-workflows/.github/workflows/release.yaml"
+
 // InstalledName is the filename gh gives every installed extension binary
 // (~/.local/share/gh/extensions/gh-claude/gh-claude). The darwin/arm64
 // fallback must sign its release-asset copy under this exact name: codesign
@@ -30,13 +41,14 @@ const AttestRepo = "bitwise-media-group/gh-claude"
 const InstalledName = "gh-claude"
 
 // VerifyOptions tunes the provenance assertion. The zero value asserts the
-// minimal honest claim ("built by this org's CI from AttestRepo");
-// SignerWorkflow tightens it to an exact build path.
+// default claim: built from AttestRepo by DefaultSignerWorkflow. Set
+// SignerWorkflow or CertIdentity to assert a different signer.
 type VerifyOptions struct {
-	SignerWorkflow string // e.g. "bitwise-media-group/github-workflows/.github/workflows/release.yaml"
-	CertIdentity   string // regexp alternative to SignerWorkflow
-	JSON           bool   // request --format json instead of the human summary
-	Tag            string // release tag backing the darwin/arm64 re-signed-binary fallback ("" disables it)
+	SignerWorkflow string    // overrides DefaultSignerWorkflow
+	CertIdentity   string    // regexp alternative to SignerWorkflow
+	JSON           bool      // request --format json instead of the human summary
+	Tag            string    // release tag backing the darwin/arm64 re-signed-binary fallback ("" disables it)
+	Progress       io.Writer // live step checklist, typically os.Stderr (nil silences it)
 }
 
 // execGH runs the gh CLI and returns combined stdout/stderr. It is a package
@@ -92,14 +104,20 @@ var execCodesign = func(path string) error {
 // to be byte-identical to the running binary — the same trust statement,
 // carried over the deterministic install-time transform.
 func VerifyBinary(path string, opts VerifyOptions) (string, error) {
+	list := newSteps(opts.Progress)
+	list.start("Checking the running binary against GitHub's attestation store")
 	report, directErr := verifyArtifact(path, opts)
 	if directErr == nil {
+		list.done()
 		return report, nil
 	}
+	list.fail()
 	if opts.Tag == "" || !resignedOnInstall() {
 		return "", directErr
 	}
-	report, err := verifyViaReleaseAsset(path, opts)
+	list.info("gh re-signs extension binaries when installing them on Apple Silicon, so the")
+	list.info("installed binary matches no attestation; verifying via the release asset instead")
+	report, err := verifyViaReleaseAsset(path, opts, list)
 	if err != nil {
 		return "", errors.Join(directErr, fmt.Errorf("release-asset fallback: %w", err))
 	}
@@ -114,6 +132,8 @@ func verifyArtifact(path string, opts VerifyOptions) (string, error) {
 		args = append(args, "--signer-workflow", opts.SignerWorkflow)
 	case opts.CertIdentity != "":
 		args = append(args, "--cert-identity-regex", opts.CertIdentity)
+	default:
+		args = append(args, "--signer-workflow", DefaultSignerWorkflow)
 	}
 	if opts.JSON {
 		args = append(args, "--format", "json")
@@ -140,38 +160,54 @@ const resignNote = "\n\nNote: gh ad-hoc re-signs extension binaries on Apple Sil
 // verifyViaReleaseAsset proves the running binary at path is the attested
 // release asset modulo gh's install-time re-signature: download the asset for
 // opts.Tag, verify the asset's provenance, re-sign the copy the way gh did,
-// and byte-compare it with the running binary.
-func verifyViaReleaseAsset(path string, opts VerifyOptions) (string, error) {
+// and byte-compare it with the running binary. Each stage is reported on
+// list as it runs.
+func verifyViaReleaseAsset(path string, opts VerifyOptions, list *steps) (string, error) {
 	dir, err := os.MkdirTemp("", "gh-claude-verify-")
 	if err != nil {
 		return "", fmt.Errorf("create temp dir: %w", err)
 	}
 	defer func() { _ = os.RemoveAll(dir) }()
 
+	list.start("Downloading " + assetName() + " from release " + opts.Tag)
 	asset := filepath.Join(dir, InstalledName)
 	if _, stderr, err := execGH("release", "download", opts.Tag, "--repo", AttestRepo,
 		"--pattern", assetName(), "--output", asset); err != nil {
+		list.fail()
 		return "", fmt.Errorf("download %s from release %s: %w\n%s",
 			assetName(), opts.Tag, err, strings.TrimSpace(stderr))
 	}
+	list.done()
 
+	list.start("Verifying the release asset's build provenance")
 	report, err := verifyArtifact(asset, opts)
 	if err != nil {
+		list.fail()
 		return "", fmt.Errorf("release asset %s: %w", assetName(), err)
 	}
+	list.done()
 
+	list.start("Re-signing the asset copy exactly as gh does at install")
 	if err := execCodesign(asset); err != nil {
+		list.fail()
 		return "", fmt.Errorf("re-sign release asset: %w", err)
 	}
+	list.done()
+
+	list.start("Comparing the running binary against the re-signed asset")
 	same, err := filesEqual(asset, path)
 	if err != nil {
+		list.fail()
 		return "", err
 	}
 	if !same {
+		list.fail()
 		return "", fmt.Errorf("running binary is not the attested %s asset from release %s, "+
 			"even after applying gh's install-time re-signature — it was modified after "+
 			"install or did not come from that release", assetName(), opts.Tag)
 	}
+	list.done()
+
 	if !opts.JSON {
 		report += fmt.Sprintf(resignNote, opts.Tag)
 	}
