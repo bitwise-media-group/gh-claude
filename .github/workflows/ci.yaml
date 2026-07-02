@@ -23,7 +23,7 @@ permissions:
 
 jobs:
     ci:
-        uses: bitwise-media-group/github-workflows/.github/workflows/ci.yaml@83b83722f4120b368e100e3b4a4af359522578c0 # v4.0.3
+        uses: bitwise-media-group/github-workflows/.github/workflows/ci.yaml@2f3418bdbc1e4c51b0504b736a75d66f09bebe6a # v4.1.0
         with:
             # default is go.sum; list every lockfile that affects the build. `make
             # lint`/`make test` run the tools/ CLIs (golangci-lint, govulncheck,
