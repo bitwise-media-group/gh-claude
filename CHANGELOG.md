@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/bitwise-media-group/gh-claude/compare/v0.2.1...v0.2.2) (2026-07-02)
+
+
+### Features
+
+* **verify:** assert the reusable-workflow signer and show live progress ([871f0e7](https://github.com/bitwise-media-group/gh-claude/commit/871f0e781e5a72683c06aef9bd622a417f9d8fdd))
+
 ## [0.2.1](https://github.com/bitwise-media-group/gh-claude/compare/v0.2.0...v0.2.1) (2026-07-02)
 
 
