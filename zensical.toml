@@ -68,6 +68,10 @@ scheme = "slate"
 toggle.icon = "lucide/moon"
 toggle.name = "Switch to system preference"
 
+# ensure analytics cookie is shared between sub-sites
+[project.extra]
+scope = "/"
+
 [[project.extra.social]]
 icon = "fontawesome/brands/github"
 link = "https://github.com/bitwise-media-group/gh-claude"
