@@ -5,17 +5,17 @@
 [`cmd/integrity.go`](../cmd/integrity.go). They use **different trust roots and
 cadences on purpose**.
 
-| | Build provenance | Security policy |
-|---|---|---|
-| Question it answers | "Did our CI build this exact binary?" | "Is this version known-bad right now?" |
-| Trust root | GitHub Sigstore attestation store | Embedded OpenSSH policy keys — Ed25519, primary + backup |
-| When it runs | On demand (`gh claude verify`) | On launch (`gh claude`, `gh claude login`), throttled |
-| Needs network | Yes | Only to refresh a stale cache |
-| Failure mode | Reports the error | **Fail-open** (warn) unless a trusted policy says **blocked** |
+|                     | Build provenance                      | Security policy                                               |
+| ------------------- | ------------------------------------- | ------------------------------------------------------------- |
+| Question it answers | "Did our CI build this exact binary?" | "Is this version known-bad right now?"                        |
+| Trust root          | GitHub Sigstore attestation store     | Embedded OpenSSH policy keys — Ed25519, primary + backup      |
+| When it runs        | On demand (`gh claude verify`)        | On launch (`gh claude`, `gh claude login`), throttled         |
+| Needs network       | Yes                                   | Only to refresh a stale cache                                 |
+| Failure mode        | Reports the error                     | **Fail-open** (warn) unless a trusted policy says **blocked** |
 
 Why two roots? A Sigstore-keyless signature **cannot be revoked** (short-lived
 Fulcio certs, permanent Rekor inclusion proofs). Revocation therefore has to be
-*additive*: a separately-signed policy that **names** bad versions and that the
+_additive_: a separately-signed policy that **names** bad versions and that the
 client consults. Keeping the policy key independent of the release-signing
 identity means a revocation can ship **without cutting a new binary release**,
 and the policy stays trustworthy even if the release path is compromised.
@@ -46,7 +46,7 @@ version. A policy is trusted only if its signature was made under the
 
 ### Policy document
 
-Served at `policyURL` (currently `https://oss.bitwisemedia.uk/policy/gh-claude.json`),
+Served at `policyURL` (`https://oss.bitwisemedia.uk/gh-claude/policy.json`),
 with a detached OpenSSH signature (the `ssh-keygen -Y sign` "sshsig" format, an
 `-----BEGIN SSH SIGNATURE-----` blob) at `policyURL + ".sig"`:
 
@@ -73,20 +73,20 @@ with a detached OpenSSH signature (the `ssh-keygen -Y sign` "sshsig" format, an
   policy).
 - `expires_at` — **freshness bound**. Past it, an "all clear" is no longer
   trusted until a newer policy is fetched (defeats a freeze attack). It does
-  **not** discard a *block*: a known-bad verdict stands even when stale/offline.
+  **not** discard a _block_: a known-bad verdict stands even when stale/offline.
 - `min_safe_version` — everything below it is blocked (semver, `v` optional).
 - `revoked[]` — exact `version` and/or artifact `digest`, with `reason` /
   `advisory` shown to the user.
 
 ### Behaviour matrix
 
-| Situation | Verdict | Launch |
-|---|---|---|
-| Trusted policy, version fine | clear | proceeds silently |
+| Situation                                            | Verdict     | Launch                                                 |
+| ---------------------------------------------------- | ----------- | ------------------------------------------------------ |
+| Trusted policy, version fine                         | clear       | proceeds silently                                      |
 | Trusted policy revokes version/digest or below floor | **blocked** | **refused** (fail-closed) with advisory + upgrade hint |
-| No policy reachable, none cached | unknown | proceeds with a stderr warning (fail-open) |
-| Cached "all clear" expired, refresh failed | unknown | proceeds with a staleness warning |
-| Cached policy blocks, network down | **blocked** | **refused** — offline never un-revokes |
+| No policy reachable, none cached                     | unknown     | proceeds with a stderr warning (fail-open)             |
+| Cached "all clear" expired, refresh failed           | unknown     | proceeds with a staleness warning                      |
+| Cached policy blocks, network down                   | **blocked** | **refused** — offline never un-revokes                 |
 
 ### Activation (one-time)
 
@@ -123,21 +123,30 @@ Paste the primary `.pub` line into `policyPublicKeySSH` and the backup's into
 confirm `policyURL` in
 [`internal/integrity/check.go`](../internal/integrity/check.go). Public keys only
 — nothing secret ships in the binary. The signing namespace `gh-claude-policy` is
-fixed in both `signature.go` (`policyNamespace`) and the Makefile (`POLICY_NS`).
+fixed in `signature.go` (`PolicyNamespace`); the authoring tool signs under it
+automatically.
 
-#### 3. Sign a policy
+#### 3. Author and sign a policy
 
-With the primary YubiKey inserted, sign the exact `policy.json` bytes and check
-the result before publishing:
+The [`policy` tool](../internal/tools/policy/main.go) creates or updates
+`docs/policy.json` and signs it in one step. It enforces the channel's rules at
+authoring time (every revision's sequence strictly exceeds its predecessor's —
+bumped automatically unless `--sequence` says otherwise — `min_safe_version`
+never drops, revocations only accumulate) and — after `ssh-keygen` signs with
+the inserted YubiKey — verifies the signature against the **embedded** policy
+keys before overwriting anything, so a wrongly-keyed signature can't be
+published.
 
 ```console
-$ make policy-sign   POLICY_KEY=id_ed25519_sk_policy      # touch the key; writes policy.json.sig
-$ make policy-verify ALLOWED_SIGNERS=policy.allowed_signers SIGNER=policy@bitwise
+$ make policy                                              # renew: bump sequence, fresh dates
+$ make policy ARGS='--revoke 0.1.2 --min-version 0.1.3'    # revoke + raise the floor
+$ go run ./internal/tools/policy --expires-days 14 --sequence 1 --min-version 0.1.0   # first policy
 ```
 
-`policy.allowed_signers` holds one `principal ssh-ed25519 AAAA…` line per policy
-key (the same public keys you embedded). `policy-verify` needs no hardware, so it
-also runs in CI as a pre-publish gate. The bare commands, if you prefer:
+`--revoke` takes a comma-separated list and may be repeated. To sign and check
+an existing `policy.json` by hand instead (`policy.allowed_signers` holds one
+`principal <public-key>` line per policy key — the same public keys you
+embedded):
 
 ```console
 $ ssh-keygen -Y sign   -n gh-claude-policy -f id_ed25519_sk_policy policy.json
@@ -150,34 +159,36 @@ trusts either signature, so no code change is needed to fail over.
 
 #### 4. Publish
 
-Upload `policy.json` and `policy.json.sig` to `policyURL` and its `.sig` sibling
-(the current endpoint serves them from `https://oss.bitwisemedia.uk/policy/`).
-Host on anything durable; optionally attest `policy.json` via CI too, for defence
-in depth.
+Commit `docs/policy.json` and `docs/policy.json.sig`; the docs site publishes
+them at `policyURL` (`https://oss.bitwisemedia.uk/gh-claude/policy.json`) and
+its `.sig` sibling. Optionally attest `policy.json` via CI too, for defence in
+depth.
 
 ### Disclosure runbook
 
 When a vulnerability is found in a released version:
 
 1. Ship the fix, cut the patched release.
-2. Edit `policy.json`: bump `sequence`, refresh `issued_at`/`expires_at`, raise
-   `min_safe_version` (and/or add a `revoked` entry with the advisory link).
-3. Sign (§3 above) with the primary YubiKey — or the backup if the primary is
-   unavailable — and publish. Clients pick it up within the refresh window and
-   refuse the vulnerable version, pointing users at `gh extension upgrade claude`.
+2. With the primary YubiKey inserted — or the backup if the primary is
+   unavailable — author and sign the revision in one step (§3 above):
+   `make policy ARGS='--revoke <bad-version> --min-version <fixed-version>'`
+   (add a `reason`/`advisory` to the new `revoked` entry by hand if wanted, then
+   re-sign).
+3. Publish. Clients pick it up within the refresh window and refuse the
+   vulnerable version, pointing users at `gh extension upgrade claude`.
 
 **Rotating a policy key** = ship a build that moves the surviving key into
 `policyPublicKeySSH` and a freshly generated key into `policyBackupPublicKeySSH`.
-Because a policy is trusted if it matches *either* embedded key, a lost or
+Because a policy is trusted if it matches _either_ embedded key, a lost or
 compromised primary never locks you out: keep signing with the backup while the
 replacement build rolls out.
 
 ## Environment toggles
 
-| Variable | Effect |
-|---|---|
+| Variable                   | Effect                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------- |
 | `GH_CLAUDE_SKIP_INTEGRITY` | Any non-empty value disables the launch-time policy check (air-gapped / offline use). |
-| `GH_CLAUDE_POLICY_URL` | Override the policy endpoint (self-hosting / testing). |
+| `GH_CLAUDE_POLICY_URL`     | Override the policy endpoint (self-hosting / testing).                                |
 
 Local `go build` / snapshot binaries report a non-release version and are never
 gated.

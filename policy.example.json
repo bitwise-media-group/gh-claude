@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "sequence": 7,
+  "issued_at": "2026-07-01T00:00:00Z",
+  "expires_at": "2026-07-15T00:00:00Z",
+  "min_safe_version": "1.4.0",
+  "revoked": [
+    {
+      "version": "1.3.0",
+      "reason": "CVE-2026-1234: scoped token written to a world-readable log",
+      "advisory": "https://github.com/bitwise-media-group/gh-claude/security/advisories/GHSA-xxxx-xxxx-xxxx"
+    },
+    { "digest": "sha256:2f0c…", "reason": "tampered artifact seen in the wild" }
+  ]
+}
