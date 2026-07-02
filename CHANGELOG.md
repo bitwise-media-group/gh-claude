@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/bitwise-media-group/gh-claude/compare/v0.2.0...v0.2.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **verify:** verify re-signed installs via release-asset equivalence ([3020f08](https://github.com/bitwise-media-group/gh-claude/commit/3020f08627f8093d854d0dab0acda082291cf7d7))
+
 ## [0.2.0](https://github.com/bitwise-media-group/gh-claude/compare/v0.1.1...v0.2.0) (2026-07-02)
 
 
