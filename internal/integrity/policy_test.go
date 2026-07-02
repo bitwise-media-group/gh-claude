@@ -63,8 +63,8 @@ func TestParsePolicyRejectsBadInput(t *testing.T) {
 	}
 	for name, in := range cases {
 		t.Run(name, func(t *testing.T) {
-			if _, err := parsePolicy([]byte(in)); err == nil {
-				t.Errorf("parsePolicy(%q) = nil error, want error", in)
+			if _, err := ParsePolicy([]byte(in)); err == nil {
+				t.Errorf("ParsePolicy(%q) = nil error, want error", in)
 			}
 		})
 	}
@@ -73,9 +73,9 @@ func TestParsePolicyRejectsBadInput(t *testing.T) {
 func TestParsePolicyAcceptsValid(t *testing.T) {
 	in := `{"schema":1,"sequence":7,"issued_at":"2026-06-01T00:00:00Z",` +
 		`"expires_at":"2026-07-01T00:00:00Z","min_safe_version":"1.4.0"}`
-	p, err := parsePolicy([]byte(in))
+	p, err := ParsePolicy([]byte(in))
 	if err != nil {
-		t.Fatalf("parsePolicy: %v", err)
+		t.Fatalf("ParsePolicy: %v", err)
 	}
 	if p.Sequence != 7 || p.MinSafeVersion != "1.4.0" {
 		t.Errorf("parsed policy = %+v", p)

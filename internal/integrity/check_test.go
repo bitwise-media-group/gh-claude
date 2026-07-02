@@ -44,14 +44,14 @@ func (s *signer) verifier() Verifier {
 	if err != nil {
 		panic(err)
 	}
-	return &sshVerifier{allowed: []ssh.PublicKey{pub}, namespace: policyNamespace}
+	return &sshVerifier{allowed: []ssh.PublicKey{pub}, namespace: PolicyNamespace}
 }
 
-// signBytes returns an OpenSSH signature (sshsig) over msg under policyNamespace,
+// signBytes returns an OpenSSH signature (sshsig) over msg under PolicyNamespace,
 // built exactly as `ssh-keygen -Y sign` builds it.
 func (s *signer) signBytes(t *testing.T, msg []byte) []byte {
 	t.Helper()
-	return s.signBytesNS(t, msg, policyNamespace)
+	return s.signBytesNS(t, msg, PolicyNamespace)
 }
 
 func (s *signer) signBytesNS(t *testing.T, msg []byte, namespace string) []byte {

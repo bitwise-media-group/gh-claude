@@ -22,7 +22,7 @@ func allowing(t *testing.T, signers ...*signer) *sshVerifier {
 		}
 		keys = append(keys, pub)
 	}
-	return &sshVerifier{allowed: keys, namespace: policyNamespace}
+	return &sshVerifier{allowed: keys, namespace: PolicyNamespace}
 }
 
 func TestSSHVerifierRejectsGarbage(t *testing.T) {
@@ -89,7 +89,7 @@ func TestVerifierAgainstSSHKeygen(t *testing.T) {
 		t.Fatal(err)
 	}
 	// ssh-keygen -Y sign writes <file>.sig
-	signCmd := exec.Command(keygen, "-Y", "sign", "-n", policyNamespace, "-f", key, msgFile)
+	signCmd := exec.Command(keygen, "-Y", "sign", "-n", PolicyNamespace, "-f", key, msgFile)
 	if out, err := signCmd.CombinedOutput(); err != nil {
 		t.Fatalf("sign: %v\n%s", err, out)
 	}
@@ -106,7 +106,7 @@ func TestVerifierAgainstSSHKeygen(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	v := &sshVerifier{allowed: []ssh.PublicKey{pub}, namespace: policyNamespace}
+	v := &sshVerifier{allowed: []ssh.PublicKey{pub}, namespace: PolicyNamespace}
 	if err := v.Verify(msg, sig); err != nil {
 		t.Errorf("verifier rejected a real ssh-keygen signature: %v", err)
 	}

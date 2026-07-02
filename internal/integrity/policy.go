@@ -31,6 +31,7 @@
 package integrity
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -73,13 +74,13 @@ type Revocation struct {
 	Advisory string `json:"advisory,omitempty"` // GHSA / advisory URL
 }
 
-// parsePolicy decodes and structurally validates a policy document. It does NOT
+// ParsePolicy decodes and structurally validates a policy document. It does NOT
 // check the signature — callers verify that over the raw bytes first (see
-// Checker.loadCache and Checker.refresh); parsePolicy runs only on
+// Checker.loadCache and Checker.refresh); ParsePolicy runs only on
 // already-authenticated bytes.
-func parsePolicy(b []byte) (*Policy, error) {
+func ParsePolicy(b []byte) (*Policy, error) {
 	var p Policy
-	dec := json.NewDecoder(strings.NewReader(string(b)))
+	dec := json.NewDecoder(bytes.NewReader(b))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&p); err != nil {
 		return nil, fmt.Errorf("malformed policy: %w", err)

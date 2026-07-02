@@ -8,13 +8,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/bitwise-media-group/gh-claude/internal/atomicfile"
 )
 
 // State is the launch-time verdict the Checker hands back to the caller.
@@ -47,12 +48,11 @@ type Result struct {
 // Blocked reports whether the caller must refuse to launch.
 func (r Result) Blocked() bool { return r.State == StateBlocked }
 
-// Defaults for the policy channel. The URL is where CI publishes the signed
-// policy and its detached signature (policyURL and policyURL+sigSuffix).
+// Defaults for the policy channel. The signed policy and its detached signature
+// live at docs/policy.json(.sig) in the repository and are published at
+// policyURL (and policyURL+sigSuffix) by the docs site.
 const (
-	// TODO(bitwise): set to the hosted policy endpoint once the channel is live,
-	// e.g. https://raw.githubusercontent.com/bitwise-media-group/gh-claude/security-policy/policy.json
-	policyURL = "https://oss.bitwisemedia.uk/security-policy/gh-claude/policy.json"
+	policyURL = "https://oss.bitwisemedia.uk/gh-claude/policy.json"
 
 	sigSuffix       = ".sig"
 	cacheFileName   = "security-policy.json"
@@ -91,7 +91,7 @@ type Checker struct {
 // Run. When no policy key is embedded, Verify is left nil and the channel is
 // disabled — Run then reports StateDisabled and never touches the network.
 func New(version, cacheDir string) *Checker {
-	v, err := embeddedVerifier()
+	v, err := EmbeddedVerifier()
 	if err != nil {
 		v = nil // errNoPolicyKey (or a malformed embedded key): channel disabled
 	}
@@ -207,7 +207,7 @@ func (c *Checker) refresh(ctx context.Context, cached *Policy) (*Policy, string)
 		// A served-but-unverifiable policy is a red flag, not a soft miss.
 		return nil, "security policy failed signature verification and was ignored"
 	}
-	p, err := parsePolicy(raw)
+	p, err := ParsePolicy(raw)
 	if err != nil {
 		return nil, "security policy was malformed and was ignored"
 	}
@@ -245,7 +245,7 @@ func (c *Checker) loadCache() (*Policy, *cachedEnvelope) {
 	if err := c.Verify.Verify(env.Policy, env.Signature); err != nil {
 		return nil, nil
 	}
-	p, err := parsePolicy(env.Policy)
+	p, err := ParsePolicy(env.Policy)
 	if err != nil {
 		return nil, nil
 	}
@@ -262,22 +262,7 @@ func (c *Checker) saveCache(env *cachedEnvelope) {
 	if err := os.MkdirAll(c.CacheDir, 0o700); err != nil {
 		return
 	}
-	tmp, err := os.CreateTemp(c.CacheDir, cacheFileName+".*")
-	if err != nil {
-		return
-	}
-	tmpName := tmp.Name()
-	if _, err := tmp.Write(b); err != nil {
-		_ = tmp.Close()
-		_ = os.Remove(tmpName)
-		return
-	}
-	if err := tmp.Close(); err != nil {
-		_ = os.Remove(tmpName)
-		return
-	}
-	_ = os.Chmod(tmpName, 0o600)
-	_ = os.Rename(tmpName, c.cachePath())
+	_ = atomicfile.Write(c.cachePath(), b, 0o600)
 }
 
 func (c *Checker) cachePath() string { return filepath.Join(c.CacheDir, cacheFileName) }
@@ -313,12 +298,9 @@ func httpFetch(ctx context.Context, url string) ([]byte, error) {
 
 // runningDigest returns "sha256:<hex>" over the bytes of the running executable.
 func runningDigest() (string, error) {
-	path, err := os.Executable()
+	path, err := RunningBinaryPath()
 	if err != nil {
 		return "", err
-	}
-	if resolved, err := filepath.EvalSymlinks(path); err == nil {
-		path = resolved
 	}
 	f, err := os.Open(path)
 	if err != nil {
@@ -331,6 +313,3 @@ func runningDigest() (string, error) {
 	}
 	return digestAlgPrefix + hex.EncodeToString(h.Sum(nil)), nil
 }
-
-// ErrDisabled is returned by helpers that require an active policy channel.
-var ErrDisabled = errors.New("integrity: policy channel is not configured")

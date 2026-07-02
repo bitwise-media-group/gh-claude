@@ -37,23 +37,25 @@ import (
 //     a fresh primary, with no window where old clients reject a valid policy.
 //
 // Keep BOTH keys on separate hardware, stored apart (two YubiKeys in two safes).
-// Both are empty by default: until at least one is provisioned (and the policy is
-// hosted at policyURL), the channel stays inert — the Checker reports itself
-// disabled and launches proceed unchanged.
+// Were both slots empty, the channel would stay inert — the Checker reports
+// itself disabled and launches proceed unchanged. The backup slot is still
+// empty: mint the break-glass key and embed it here before a lost primary can
+// matter.
 //
 // See docs/security-policy.md for how to generate the keys and sign a policy.
-// TODO(bitwise): paste the real public keys once minted, e.g.
-//
-//	sk-ssh-ed25519@openssh.com AAAAGnNr...  policy@bitwise
 const (
-	policyPublicKeySSH       = `` // primary signer (authorized_keys line)
-	policyBackupPublicKeySSH = `` // backup / break-glass signer
+	// primary signer (authorized_keys line)
+	policyPublicKeySSH = "sk-ssh-ed25519@openssh.com" +
+		" AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIOAKrt9W1M4xxjMNehCiTSKUfGQYhTCKOk8pN+gC4+dxAAAADXNzaDpnaC1jbGF1ZGU=" +
+		" gh-claude"
+	// backup / break-glass signer
+	policyBackupPublicKeySSH = ""
 )
 
-// policyNamespace is the SSH-signature namespace the policy is signed under
+// PolicyNamespace is the SSH-signature namespace the policy is signed under
 // (`ssh-keygen -Y sign -n <namespace>`). Binding to a fixed namespace stops a
 // signature made for another purpose from being replayed as a policy signature.
-const policyNamespace = "gh-claude-policy"
+const PolicyNamespace = "gh-claude-policy"
 
 // sshSigMagic prefixes both the wire container and the signed-data preamble of an
 // OpenSSH signature (see PROTOCOL.sshsig).
@@ -80,12 +82,12 @@ type sshVerifier struct {
 	namespace string
 }
 
-// embeddedVerifier builds the Verifier from the embedded policy keys, accepting a
+// EmbeddedVerifier builds the Verifier from the embedded policy keys, accepting a
 // signature from any of them. It returns errNoPolicyKey when none are set so the
 // caller can treat the channel as disabled instead of erroring. A configured but
 // malformed key is a hard error (surfaced so it is caught before release, not
 // silently trusted-nothing).
-func embeddedVerifier() (Verifier, error) {
+func EmbeddedVerifier() (Verifier, error) {
 	var allowed []ssh.PublicKey
 	for _, line := range []string{policyPublicKeySSH, policyBackupPublicKeySSH} {
 		if strings.TrimSpace(line) == "" {
@@ -100,7 +102,7 @@ func embeddedVerifier() (Verifier, error) {
 	if len(allowed) == 0 {
 		return nil, errNoPolicyKey
 	}
-	return &sshVerifier{allowed: allowed, namespace: policyNamespace}, nil
+	return &sshVerifier{allowed: allowed, namespace: PolicyNamespace}, nil
 }
 
 // wrappedSig is the sshsig wire container, minus the leading 6-byte magic.
