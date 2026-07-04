@@ -6,5 +6,7 @@ dist/**
 coverage/**
 .venv/**
 site/**
+make/**
+.bin/**
 
 commit.sh

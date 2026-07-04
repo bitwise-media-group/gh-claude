@@ -72,14 +72,11 @@ binary_signs:
 
 sboms:
     - artifacts: binary
-      # syft is pinned in tools/go.mod and invoked via `go tool` — no separate
-      # install. GoReleaser runs the SBOM command with its working directory set to
-      # dist/, hence the ../ on the modfile path.
-      cmd: go
+      # syft is installed from the make/ library's .syft-version pin into .bin/,
+      # which the library's snapshot/release targets put on PATH; the reusable
+      # release workflow provisions it from the same pin in CI.
+      cmd: syft
       args:
-          - tool
-          - -modfile=../tools/go.mod
-          - syft
           - $artifact
           - --output
           - spdx-json=$document

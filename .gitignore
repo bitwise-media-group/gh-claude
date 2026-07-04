@@ -14,3 +14,6 @@
 
 # Node tooling
 node_modules/
+
+# Go dev tools installed on demand by the shared Makefile library (make/gotools.mk)
+.bin/
