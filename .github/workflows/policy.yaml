@@ -59,7 +59,7 @@ jobs:
         steps:
             # the triggering commit -- only the policy pair is taken from here
             - name: Checkout repository
-              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false # read-only checkout; don't leave the token in .git/config
 
@@ -77,7 +77,7 @@ jobs:
                   echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
             - name: Checkout latest release
-              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   ref: ${{ steps.latest.outputs.tag }}
                   path: release
