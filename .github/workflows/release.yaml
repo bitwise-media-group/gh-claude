@@ -52,6 +52,8 @@ jobs:
             attestations: write
             # artifact storage record for the attestation
             artifact-metadata: write
+            # push container images to ghcr (goreleaser dockers_v2, when configured)
+            packages: write
             # required by the reusable workflow's permission union (docs job, skipped here)
             pages: write
         with:
