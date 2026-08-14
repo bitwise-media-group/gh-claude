@@ -13,7 +13,7 @@
 # Wire-up: "Merge Review Ack" (this workflow's name) is listed in merge.yaml's
 # workflow_run.workflows. No secret needed — it does no privileged work.
 #
-# The reusable workflow is pinned to a full commit SHA; Dependabot keeps it fresh.
+# The reusable workflow is pinned to a full commit SHA; Renovate keeps it fresh.
 name: Merge Review Ack
 
 on:

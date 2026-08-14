@@ -21,7 +21,7 @@
 # repo and in main's ruleset bypass list. Requires branch protection that requires
 # PR review.
 #
-# The reusable workflow is pinned to a full commit SHA; Dependabot keeps it fresh.
+# The reusable workflow is pinned to a full commit SHA; Renovate keeps it fresh.
 name: Merge
 
 on:

@@ -194,9 +194,13 @@ This repo uses the org's reusable workflows (thin callers in
   workflows.
 - **`merge.yaml`** + **`merge-review-ack.yaml`** — fast-forward `/merge` and
   `/auto-merge` flows that preserve commit signatures.
-- **`dependabot-merge.yaml`** — auto-approves and fast-forwards Dependabot
-  minor/patch PRs once CI is green (config in `.github/dependabot.yaml`).
 - **`merge-notice.yaml`** — posts a one-time `/merge` explainer on new PRs.
+
+Dependency updates (action SHA pins, gomod, and the `.mise` toolchain
+submodule) come from the org Renovate bot
+([`bitwise-media-group/renovate-config`](https://github.com/bitwise-media-group/renovate-config)),
+which squash-merges its own green PRs via the API — no repo-local workflow or
+config file.
 
 The merge automation requires the org's "FF Merge" GitHub App (the
 `FF_MERGE_CLIENT_ID` variable + `FF_MERGE_PRIVATE_KEY` secret) and branch

@@ -20,7 +20,7 @@
 # back to GITHUB_TOKEN (the release PR still opens, it just won't auto-merge).
 #
 # The reusable workflow is pinned to a full commit SHA (tag in the comment) so a
-# moved tag can never change what runs; Dependabot keeps the pin fresh.
+# moved tag can never change what runs; Renovate keeps the pin fresh.
 name: Release
 
 on:
