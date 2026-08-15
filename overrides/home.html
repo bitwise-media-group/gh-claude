@@ -23,7 +23,7 @@ super() }}
                 least-privilege
             </div>
             <h1 class="ghc-wordmark">
-                <span class="p">$ </span><span class="gh">gh</span>
+                <span class="p">$</span><span class="gh">gh</span>
                 <span class="cl">claude</span>
             </h1>
             <p class="ghc-tagline">
@@ -40,8 +40,7 @@ super() }}
             </p>
             <div class="ghc-term">
                 <div class="ghc-term__bar">
-                    <span class="ghc-dots"><i></i><i></i><i></i></span
-                    ><span>zsh — install</span>
+                    <span class="ghc-dots"></span><span>zsh — install</span>
                 </div>
                 <div class="ghc-copy">
                     <span class="ghc-p">$</span>
@@ -107,12 +106,11 @@ super() }}
             </div>
         </div>
     </header>
-
     <!-- TERMINAL SHOWCASE: the launch on the left, the token's exact scope on the right -->
     <section class="ghc-shot">
         <div class="ghc-shot__frame">
             <div class="ghc-shot__bar">
-                <span class="ghc-dots"><i></i><i></i><i></i></span>
+                <span class="ghc-dots"></span>
                 <span class="ghc-title">gh claude · scoped launch</span>
                 <span class="ghc-live">● read-only · no push</span>
             </div>
@@ -210,21 +208,19 @@ super() }}
             <b>[2] exactly what Claude gets</b>.
         </p>
     </section>
-
     <!-- MARQUEE -->
     {# The tools gh-claude drives and the standards it speaks. Rendered twice so
     the translateX(-50%) scroll loops seamlessly; aria-hidden because it is
-    decorative and would otherwise be announced twice. #} {% set ghc_marquee =
-    ["gh CLI", "git", "claude", "fine-grained PATs", "macOS Keychain",
+    decorative and would otherwise be announced twice. #} {% set ghc_marquee = [
+    "gh CLI", "git", "claude", "fine-grained PATs", "macOS Keychain",
     "Credential Manager", "1Password CLI", "OpenSSH signatures", "Sigstore",
-    "SLSA provenance", "SPDX SBOMs"] %}
+    "SLSA provenance", "SPDX SBOMs" ] %}
     <div class="ghc-marquee" aria-hidden="true">
         <div class="ghc-marquee__track">
             {% for i in [1, 2] %}{% for m in ghc_marquee %}<span>{{ m }}</span
             >{% endfor %}{% endfor %}
         </div>
     </div>
-
     <!-- STATS -->
     <section class="ghc-stats-wrap">
         <div class="ghc-stats">
@@ -244,7 +240,6 @@ super() }}
             </div>
         </div>
     </section>
-
     <!-- WHAT GH-CLAUDE DOES -->
     <section class="ghc-section">
         <h2 class="ghc-eyebrow">// WHAT GH-CLAUDE DOES</h2>
@@ -440,7 +435,6 @@ super() }}
             </div>
         </div>
     </section>
-
     <!-- SEVEN COMMANDS, ONE JOB -->
     <section class="ghc-section">
         <h2 class="ghc-eyebrow">// SEVEN COMMANDS, ONE JOB</h2>
@@ -511,7 +505,6 @@ super() }}
             </div>
         </div>
     </section>
-
     <!-- THREE STEPS -->
     <section class="ghc-section ghc-section--last">
         <h2 class="ghc-eyebrow">// THREE STEPS TO A SCOPED LAUNCH</h2>
