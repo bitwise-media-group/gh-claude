@@ -196,8 +196,8 @@ This repo uses the org's reusable workflows (thin callers in
   `/auto-merge` flows that preserve commit signatures.
 - **`merge-notice.yaml`** — posts a one-time `/merge` explainer on new PRs.
 
-Dependency updates (action SHA pins, gomod, and the `.mise` toolchain
-submodule) come from the org Renovate bot
+Dependency updates (action SHA pins, gomod, and the `.mise` toolchain submodule)
+come from the org Renovate bot
 ([`bitwise-media-group/renovate-config`](https://github.com/bitwise-media-group/renovate-config)),
 which squash-merges its own green PRs via the API — no repo-local workflow or
 config file.
