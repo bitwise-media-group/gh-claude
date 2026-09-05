@@ -158,9 +158,23 @@
     letter-spacing: 0.2px;
 }
 
-/* Header / drawer wordmark: "gh-claude" split across the duotone
-   (partials/*.html) — gh in purple, claude in orange. */
+/* Header / drawer lockup: the crab mark plus "gh-claude" split across the
+   duotone (partials/*.html). Match the title's 2.4rem line box so adding the
+   mark doesn't pull the palette and search controls out of alignment. */
 .ghc-headmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 2.4rem;
+    color: inherit;
+}
+.ghc-headmark__logo {
+    display: block;
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+}
+.ghc-headmark__name {
     font-family: var(
         --md-code-font-family,
         "JetBrains Mono",
@@ -170,6 +184,13 @@
     font-weight: 700;
     font-size: 17px;
     letter-spacing: -0.01em;
+}
+.md-nav__title .ghc-headmark {
+    height: auto;
+}
+.md-nav__title .ghc-headmark__logo {
+    width: 30px;
+    height: 30px;
 }
 .ghc-headmark .gh {
     color: var(--ghc-ink-purple);
