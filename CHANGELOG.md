@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.3](https://github.com/bitwise-media-group/gh-claude/compare/v0.2.2...v0.2.3) (2026-09-05)
+
+
+### Bug Fixes
+
+* **deps:** update actions/deploy-pages action to v5.0.1 ([#61](https://github.com/bitwise-media-group/gh-claude/issues/61)) ([a7a4ecf](https://github.com/bitwise-media-group/gh-claude/commit/a7a4ecf93b66e6664e819b02d69e37acd4e5d4bc))
+* **deps:** update astral-sh/setup-uv action to v10 ([#53](https://github.com/bitwise-media-group/gh-claude/issues/53)) ([cc710c8](https://github.com/bitwise-media-group/gh-claude/commit/cc710c84e051dc6b1e4822f23c947da46d4870d0))
+* **deps:** update bitwise-media-group/github-workflows action to v6.1.1 ([#45](https://github.com/bitwise-media-group/gh-claude/issues/45)) ([20bec7d](https://github.com/bitwise-media-group/gh-claude/commit/20bec7da5739052e38388a5ab073c9481abd32e6))
+* **deps:** update bitwise-media-group/github-workflows action to v6.2.0 ([#51](https://github.com/bitwise-media-group/gh-claude/issues/51)) ([d0fb93e](https://github.com/bitwise-media-group/gh-claude/commit/d0fb93e21e39305b7ad4e9c2536a33b7b0a91970))
+* **deps:** update module github.com/cli/go-gh/v2 to v2.15.0 ([#62](https://github.com/bitwise-media-group/gh-claude/issues/62)) ([c78dda9](https://github.com/bitwise-media-group/gh-claude/commit/c78dda92a9b89c76c2fcff897261395c4df1dc21))
+
 ## [0.2.2](https://github.com/bitwise-media-group/gh-claude/compare/v0.2.1...v0.2.2) (2026-07-02)
 
 
