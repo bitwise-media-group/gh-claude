@@ -3,10 +3,9 @@
  SPDX-License-Identifier: MIT
 -->
 
-{#- overrides/partials/nav.html — primary drawer nav. Drops the stock logo from
-the drawer title and renders the site name as the same "gh-claude" wordmark as
-the header (overrides/partials/header.html). Styling lives in
-docs/stylesheets/extra.css (.ghc-headmark). -#} {% import
+{#- overrides/partials/nav.html — primary drawer nav. Renders the same crab mark
+and "gh-claude" wordmark as the header (overrides/partials/header.html). Styling
+lives in docs/stylesheets/extra.css (.ghc-headmark). -#} {% import
 "partials/nav-item.html" as item with context %} {% set class = "md-nav
 md-nav--primary" %} {% if "navigation.tabs" in features %} {% set class = class
 ~ " md-nav--lifted" %} {% endif %} {% if "toc.integrate" in features %} {% set
@@ -19,8 +18,18 @@ class = class ~ " md-nav--integrated" %} {% endif %}
             class="ghc-headmark"
             aria-label="{{ config.site_name }}"
         >
-            <span class="gh">gh</span><span class="dash">-</span
-            ><span class="cl">claude</span>
+            <img
+                src="{{ config.theme.logo | url }}"
+                alt=""
+                class="ghc-headmark__logo"
+                width="28"
+                height="28"
+                aria-hidden="true"
+            />
+            <span class="ghc-headmark__name"
+                ><span class="gh">gh</span><span class="dash">-</span
+                ><span class="cl">claude</span></span
+            >
         </a>
     </label>
     {% if config.repo_url %}
