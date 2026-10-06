@@ -168,10 +168,13 @@ back.
 
 ## Development
 
-The `Makefile` is the entry point (`make help` lists every target). The Go
-developer CLIs (golangci-lint, govulncheck, gotestsum, gocover-cobertura,
-addlicense, goreleaser, syft) are pinned in `tools/go.mod` and run via `go tool`
-— no separate installs.
+Everything runs as [mise](https://mise.jdx.dev) tasks (`mise tasks` lists them);
+the `Makefile` forwards `make <task>` to `mise run <task>`. Go and govulncheck
+are pinned in the root `mise.toml`; the other developer CLIs (golangci-lint,
+gotestsum, addlicense, goreleaser, syft, ...) come from the shared toolchain
+submodule at `.mise/`
+([`bitwise-media-group/toolchain`](https://github.com/bitwise-media-group/toolchain)).
+Run `git submodule update --init` then `mise install` once.
 
 ```sh
 make pr        # full local gate: tidy, license headers, fmt, lint, test, build
@@ -188,19 +191,18 @@ make snapshot  # local release snapshot (binaries + SBOMs, no publish/signing)
 This repo uses the org's reusable workflows (thin callers in
 `.github/workflows/`):
 
-- **`ci.yaml`** — runs `make lint/build/test` on every push and PR and uploads
-  coverage.
+- **`ci.yaml`** — runs `mise run lint/build/test` on every push and PR and
+  uploads coverage.
 - **`security.yaml`** — CodeQL analysis of the Go module and the Actions
   workflows.
 - **`merge.yaml`** + **`merge-review-ack.yaml`** — fast-forward `/merge` and
   `/auto-merge` flows that preserve commit signatures.
 - **`merge-notice.yaml`** — posts a one-time `/merge` explainer on new PRs.
-
-Dependency updates (action SHA pins, gomod, and the `.mise` toolchain submodule)
-come from the org Renovate bot
-([`bitwise-media-group/renovate-config`](https://github.com/bitwise-media-group/renovate-config)),
-which squash-merges its own green PRs via the API — no repo-local workflow or
-config file.
+- **`renovate.yaml`** — runs the org's self-hosted Renovate against this repo
+  hourly (and on Dependency Dashboard / PR checkbox ticks) for action SHA pins,
+  gomod, the mise pins and the `.mise` toolchain submodule, using the shared
+  preset in
+  [`bitwise-media-group/renovate-config`](https://github.com/bitwise-media-group/renovate-config).
 
 The merge automation requires the org's "FF Merge" GitHub App (the
 `FF_MERGE_CLIENT_ID` variable + `FF_MERGE_PRIVATE_KEY` secret) and branch
