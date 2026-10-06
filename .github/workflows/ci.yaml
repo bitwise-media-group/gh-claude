@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: MIT
 
 # Continuous integration — thin caller for the org's reusable ci workflow. It runs
-# the canonical Makefile gates (lint, build, test) as one parallel job each, then a
+# the canonical mise tasks (lint, build, test) as one parallel job each, then a
 # Codecov upload from coverage/cobertura-coverage.xml (coverage) and
-# coverage/junit.xml (test results) — both emitted by `make test`. `make lint`
-# carries all check-mode static analysis — addlicense, golangci-lint, govulncheck,
-# markdownlint, prettier --check. The Go version comes from go.mod and the Node
-# version from package.json.
+# coverage/junit.xml (test results) — both emitted by `mise run test`. `mise run
+# lint` carries all check-mode static analysis — addlicense, golangci-lint,
+# govulncheck, markdownlint, prettier --check, actionlint, zizmor. Go comes from
+# the root mise.toml pin and the dev CLIs from the toolchain submodule's pins.
 #
 # The reusable workflow is pinned to a full commit SHA (tag in the comment) so a
 # moved tag can never change what runs; Renovate keeps the pin fresh.
@@ -24,8 +24,4 @@ permissions:
 
 jobs:
     ci:
-        # The default cache-dependency-path (go.sum) is the only lockfile that
-        # affects the build: the dev CLIs (golangci-lint, govulncheck, addlicense,
-        # gotestsum, ...) are pinned by the toolchain submodule's
-        # config.toml/mise.lock, not a tools/go.sum.
-        uses: bitwise-media-group/github-workflows/.github/workflows/ci.yaml@a0d0170124ad80a06082078b60669d7c99d33ee6 # v6.3.0
+        uses: bitwise-media-group/github-workflows/.github/workflows/ci.yaml@fea4c5284a9d3679c64f0e2cac5810124e0294d2 # v7.0.0
