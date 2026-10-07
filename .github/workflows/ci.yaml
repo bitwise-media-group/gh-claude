@@ -28,4 +28,4 @@ jobs:
         # affects the build: the dev CLIs (golangci-lint, govulncheck, addlicense,
         # gotestsum, ...) are pinned by the toolchain submodule's
         # config.toml/mise.lock, not a tools/go.sum.
-        uses: bitwise-media-group/github-workflows/.github/workflows/ci.yaml@a0d0170124ad80a06082078b60669d7c99d33ee6 # v6.3.0
+        uses: bitwise-media-group/github-workflows/.github/workflows/ci.yaml@fea4c5284a9d3679c64f0e2cac5810124e0294d2 # v7.0.0
