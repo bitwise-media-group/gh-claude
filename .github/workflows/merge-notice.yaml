@@ -24,6 +24,6 @@ permissions:
 
 jobs:
     notice:
-        uses: bitwise-media-group/github-workflows/.github/workflows/merge-notice.yaml@fea4c5284a9d3679c64f0e2cac5810124e0294d2 # v7.0.0
+        uses: bitwise-media-group/github-workflows/.github/workflows/merge-notice.yaml@8b34c6fe87a61fc2f800876e9268bc1da8635e88 # v8.0.0
         with:
             pr-number: ${{ github.event.pull_request.number }}
