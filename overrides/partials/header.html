@@ -3,14 +3,14 @@
  SPDX-License-Identifier: MIT
 -->
 
-{#- overrides/partials/header.html — gh-claude header. Drops the stock logo and
-renders the site name as the "gh-claude" wordmark split across the duotone (gh
-in purple, claude in orange, matching the hero in home.html). The wordmark links
-home, since removing the logo removes the header's only home affordance. Styling
-lives in docs/stylesheets/extra.css (.ghc-headmark). -#} {% set class =
-"md-header" %} {% if "navigation.tabs.sticky" in features %} {% set class =
-class ~ " md-header--shadow md-header--lifted" %} {% elif "navigation.tabs" not
-in features %} {% set class = class ~ " md-header--shadow" %} {% endif %}
+{#- overrides/partials/header.html — gh-claude header. Pairs the crab mark with
+the "gh-claude" wordmark split across the duotone (gh in purple, claude in
+orange, matching the hero in home.html). The combined mark links home at every
+breakpoint. Styling lives in docs/stylesheets/extra.css (.ghc-headmark). -#} {%
+set class = "md-header" %} {% if "navigation.tabs.sticky" in features %} {% set
+class = class ~ " md-header--shadow md-header--lifted" %} {% elif
+"navigation.tabs" not in features %} {% set class = class ~ " md-header--shadow"
+%} {% endif %}
 <header class="{{ class }}" data-md-component="header">
     <nav class="md-header__inner md-grid" aria-label="{{ lang.t('header') }}">
         <label
@@ -31,8 +31,19 @@ in features %} {% set class = class ~ " md-header--shadow" %} {% endif %}
                             class="ghc-headmark"
                             aria-label="{{ config.site_name }}"
                         >
-                            <span class="gh">gh</span><span class="dash">-</span
-                            ><span class="cl">claude</span>
+                            <img
+                                src="{{ config.theme.logo | url }}"
+                                alt=""
+                                class="ghc-headmark__logo"
+                                width="28"
+                                height="28"
+                                aria-hidden="true"
+                            />
+                            <span class="ghc-headmark__name"
+                                ><span class="gh">gh</span
+                                ><span class="dash">-</span
+                                ><span class="cl">claude</span></span
+                            >
                         </a>
                     </span>
                 </div>
