@@ -1,0 +1,120 @@
+<!--
+ Copyright 2026 Bitwise Media Group Ltd
+ SPDX-License-Identifier: MIT
+
+ An original gh-claude mark: a terracotta crab with purple cat ears. The
+ shield-shaped token and hourglass communicate a protected, short-lived
+ credential. The compact geometric silhouette deliberately avoids the
+ Octocat's head-and-tentacle form and Anthropic's starburst.
+-->
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 96 96"
+    role="img"
+    aria-labelledby="logo-title logo-desc"
+>
+    <title id="logo-title">gh-claude</title>
+    <desc id="logo-desc">
+        An orange crab with purple cat ears carrying a shield with an hourglass.
+    </desc>
+    <style>
+        .purple {
+            fill: #a371f7;
+        }
+        .purple-highlight {
+            fill: #bc8cff;
+        }
+        .orange {
+            color: #d97757;
+            fill: #d97757;
+        }
+        .orange-highlight {
+            fill: none;
+            stroke: #e08f72;
+        }
+        .detail {
+            fill: #0d1117;
+        }
+        @media (prefers-color-scheme: light) {
+            .purple {
+                fill: #7a45d6;
+            }
+            .purple-highlight {
+                fill: #8250df;
+            }
+            .orange {
+                color: #b3552e;
+                fill: #b3552e;
+            }
+            .orange-highlight {
+                stroke: #d97757;
+            }
+            .detail {
+                fill: #fff;
+            }
+        }
+    </style>
+
+    <!-- Six walking legs give the mark a broad, unmistakably crab-like stance. -->
+    <g
+        class="orange"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="5.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+    >
+        <path d="m31 61-14 8-9-2" />
+        <path d="m33 69-13 11-9-1" />
+        <path d="m40 76-9 12-8 2" />
+        <path d="m65 61 14 8 9-2" />
+        <path d="m63 69 13 11 9-1" />
+        <path d="m56 76 9 12 8 2" />
+    </g>
+
+    <!-- Open pincers distinguish the silhouette from a cat mascot. -->
+    <path
+        class="orange"
+        fill-rule="evenodd"
+        d="M20 53C8 53 1 45 1 35S9 17 20 17c7 0 13 3 17 8L25 35l12 10c-4 5-10 8-17 8zm-1-9c3 0 5-.8 7-2.3L18 35l8-6.7c-2-1.5-4-2.3-7-2.3-6 0-10 4-10 9s4 9 10 9z"
+    />
+    <path
+        class="orange"
+        fill-rule="evenodd"
+        d="M76 53c12 0 19-8 19-18s-8-18-19-18c-7 0-13 3-17 8l12 10-12 10c4 5 10 8 17 8zm1-9c-3 0-5-.8-7-2.3l8-6.7-8-6.7c2-1.5 4-2.3 7-2.3 6 0 10 4 10 9s-4 9-10 9z"
+    />
+
+    <!-- Purple ears are a colour cue, not a recreation of a cat-head logo. -->
+    <path class="purple" d="M27 39 24 11c-.4-3 2.8-4.7 5-2.7L48 26l-6 18z" />
+    <path class="purple" d="m69 39 3-28c.4-3-2.8-4.7-5-2.7L48 26l6 18z" />
+    <path class="purple-highlight" d="m30 29-1-12 9 11-4 5z" />
+    <path class="purple-highlight" d="m66 29 1-12-9 11 4 5z" />
+
+    <!-- The shell is intentionally closer to a rounded security badge than a head. -->
+    <path
+        class="orange"
+        d="M48 29c22 0 35 11 35 30v7c0 14-15 22-35 22s-35-8-35-22v-7c0-19 13-30 35-30z"
+    />
+    <path
+        class="orange-highlight"
+        d="M23 55c3-10 11-16 25-16s22 6 25 16"
+        stroke-width="4"
+        stroke-linecap="round"
+        opacity=".7"
+    />
+
+    <!-- Friendly crab eyes; no muzzle, whiskers, tail, or cat facial features. -->
+    <circle class="detail" cx="32" cy="56" r="2.75" />
+    <circle class="detail" cx="64" cy="56" r="2.75" />
+
+    <!-- A shield plus hourglass: scoped and temporary. -->
+    <path
+        class="purple"
+        d="m48 48 9 3.3v10.2c0 7-3.8 12.3-9 15.5-5.2-3.2-9-8.5-9-15.5V51.3z"
+    />
+    <path
+        class="detail"
+        d="M44 55h8v2.5l-2.5 2.7 2.5 2.7V67h-8v-4.1l2.5-2.7-2.5-2.7zm2.2 2 1.8 1.8 1.8-1.8zm1.8 5-1.8 2.5h3.6z"
+        fill-rule="evenodd"
+    />
+</svg>
