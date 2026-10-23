@@ -6,7 +6,7 @@ require (
 	github.com/cli/browser v1.3.0
 	github.com/cli/go-gh/v2 v2.16.2
 	github.com/spf13/cobra v1.10.2
-	golang.org/x/crypto v0.57.0
+	golang.org/x/crypto v0.58.0
 	golang.org/x/term v0.47.0
 )
 
@@ -27,7 +27,7 @@ require (
 	github.com/thlib/go-timezone-local v0.0.8 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/sys v0.49.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
