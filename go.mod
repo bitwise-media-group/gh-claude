@@ -1,6 +1,6 @@
 module github.com/bitwise-media-group/gh-claude
 
-go 1.26.6
+go 1.27.3
 
 require (
 	github.com/cli/browser v1.3.0
