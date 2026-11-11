@@ -199,9 +199,9 @@ This repo uses the org's reusable workflows (thin callers in
   `/auto-merge` flows that preserve commit signatures.
 - **`merge-notice.yaml`** — posts a one-time `/merge` explainer on new PRs.
 - **`renovate.yaml`** — runs the org's self-hosted Renovate against this repo
-  hourly (and on Dependency Dashboard / PR checkbox ticks) for action SHA pins,
-  gomod, the mise pins and the `.mise` toolchain submodule, using the shared
-  preset in
+  hourly (and on Dependency Dashboard / PR checkbox ticks, when CI goes green on
+  a Renovate PR, and on every push to main) for action SHA pins, gomod, the mise
+  pins and the `.mise` toolchain submodule, using the shared preset in
   [`bitwise-media-group/renovate-config`](https://github.com/bitwise-media-group/renovate-config).
 
 The merge automation requires the org's "FF Merge" GitHub App (the
