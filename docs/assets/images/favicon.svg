@@ -1,0 +1,94 @@
+<!--
+ Copyright 2026 Bitwise Media Group Ltd
+ SPDX-License-Identifier: MIT
+
+ Pixel-scale companion to logo.svg. It preserves the ears, shell, pincers,
+ crab stance, and temporary-token shield while omitting shell highlights.
+-->
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 32 32"
+    role="img"
+    aria-labelledby="favicon-title"
+>
+    <title id="favicon-title">gh-claude</title>
+    <style>
+        .tile {
+            fill: #0d1117;
+        }
+        .purple {
+            fill: #a371f7;
+        }
+        .orange {
+            color: #d97757;
+            fill: #d97757;
+        }
+        .cutout {
+            fill: #0d1117;
+        }
+        @media (prefers-color-scheme: light) {
+            .tile {
+                fill: #fff;
+            }
+            .purple {
+                fill: #7a45d6;
+            }
+            .orange {
+                color: #b3552e;
+                fill: #b3552e;
+            }
+            .cutout {
+                fill: #fff;
+            }
+        }
+    </style>
+
+    <rect class="tile" width="32" height="32" rx="6" />
+
+    <!-- Chunky, separated ears remain recognisable at 16 × 16. -->
+    <path
+        class="purple"
+        d="m9.5 12-1-8.3c-.1-1 1-1.5 1.7-.8l5.8 5.4-1.8 5.2z"
+    />
+    <path class="purple" d="m22.5 12 1-8.3c.1-1-1-1.5-1.7-.8L16 8.3l1.8 5.2z" />
+
+    <!-- Tiny legs keep the silhouette crab-like without relying on fine detail. -->
+    <g
+        class="orange"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+    >
+        <path
+            d="m9 20-5 3-2-.5m8.5.5-4 5-2 .5M23 20l5 3 2-.5M21.5 23l4 5 2 .5"
+        />
+    </g>
+
+    <!-- Open ring-like pincers are distinct from the pointed cat ears above. -->
+    <path
+        class="orange"
+        fill-rule="evenodd"
+        d="M7 16c-4 0-6.5-2.5-6.5-5.5S3 5 7 5c2.3 0 4.2 1 5.5 2.6l-4 2.9 4 3C11.2 15 9.3 16 7 16zm0-3c.8 0 1.5-.2 2.2-.7L7 10.5l2.2-1.8C8.5 8.2 7.8 8 7 8c-1.8 0-3.2 1.1-3.2 2.5S5.2 13 7 13z"
+    />
+    <path
+        class="orange"
+        fill-rule="evenodd"
+        d="M25 16c4 0 6.5-2.5 6.5-5.5S29 5 25 5c-2.3 0-4.2 1-5.5 2.6l4 2.9-4 3C20.8 15 22.7 16 25 16zm0-3c-.8 0-1.5-.2-2.2-.7l2.2-1.8-2.2-1.8c.7-.5 1.4-.7 2.2-.7 1.8 0 3.2 1.1 3.2 2.5S26.8 13 25 13z"
+    />
+
+    <path
+        class="orange"
+        d="M16 9c6.9 0 10.5 4 10.5 10.2v2.3c0 4.5-4.2 7-10.5 7s-10.5-2.5-10.5-7v-2.3C5.5 13 9.1 9 16 9z"
+    />
+
+    <circle class="cutout" cx="10.5" cy="17.5" r="1.1" />
+    <circle class="cutout" cx="21.5" cy="17.5" r="1.1" />
+
+    <!-- Shield-shaped temporary-token badge; one robust hourglass reads at 16px. -->
+    <path
+        class="purple"
+        d="m16 14 4 1.5V20c0 3-1.7 5.4-4 6.7-2.3-1.3-4-3.7-4-6.7v-4.5z"
+    />
+    <path class="cutout" d="m14.3 17.5 1.7 2 1.7-2zm0 5 1.7-2 1.7 2z" />
+</svg>
