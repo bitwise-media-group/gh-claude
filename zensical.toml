@@ -29,6 +29,10 @@ nav = [
 [project.theme]
 name = "material"
 custom_dir = "overrides"
+# Paths are relative to docs_dir. The shared header and drawer pair the mark
+# with the existing duotone text wordmark.
+logo = "assets/images/logo.svg"
+favicon = "assets/images/favicon.svg"
 features = [
   "navigation.instant",
   "navigation.tracking",
